@@ -6,7 +6,7 @@
 
 <script>
 // @ is an alias to /src
-import HelloWorld from '@/components/HelloWorld.vue'
+import HelloWorld from '@/components/MainScreen.vue'
 
 export default {
   name: 'home',

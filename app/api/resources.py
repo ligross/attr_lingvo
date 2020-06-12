@@ -4,35 +4,38 @@ http://flask-restplus.readthedocs.io
 """
 
 from datetime import datetime
-from flask import request
+import logging
+from flask import request, current_app
 from flask_restplus import Resource
 
-from .security import require_auth
 from . import api_rest
+from app.api.utils.Text import Text
+from app.api.utils.correlation import calculate_correlation
+
+logger = logging.getLogger()
 
 
-class SecureResource(Resource):
-    """ Calls require_auth decorator on all requests """
-    method_decorators = [require_auth]
-
-
-@api_rest.route('/resource/<string:resource_id>')
+@api_rest.route('/results/calculate')
 class ResourceOne(Resource):
-    """ Unsecure Resource Class: Inherit from Resource """
 
-    def get(self, resource_id):
-        timestamp = datetime.utcnow().isoformat()
-        return {'timestamp': timestamp}
-
-    def post(self, resource_id):
+    def post(self):
         json_payload = request.json
-        return {'timestamp': json_payload}, 201
+        current_app.logger.info(f'Received json payload: {json_payload}')
 
+        attributes = {k: v for k, v in json_payload['attributes'].items() if v['checked'] is True}
+        first_text_results = Text(json_payload['first_text'], attributes).calculate_results()
+        second_text_results = Text(json_payload['second_text'], attributes).calculate_results()
+        correlation = calculate_correlation(
+            list(map(lambda k: k[1]['result'], first_text_results.items())),
+            list(map(lambda k: k[1]['result'], second_text_results.items()))
+        )
 
-@api_rest.route('/secure-resource/<string:resource_id>')
-class SecureResourceOne(SecureResource):
-    """ Unsecure Resource Class: Inherit from Resource """
-
-    def get(self, resource_id):
-        timestamp = datetime.utcnow().isoformat()
-        return {'timestamp': timestamp}
+        payload = {
+            'correlation': correlation,
+            'attributes': [{'id': ind, 'name': v['name'],
+                            'first_text': v['result'],
+                            'second_text': second_text_results[k]['result']
+                            } for ind, (k, v) in enumerate(first_text_results.items(), start=1)],
+        }
+        current_app.logger.info(f'Results: {payload}')
+        return {'results': payload}, 200
