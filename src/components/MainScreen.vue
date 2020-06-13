@@ -33,6 +33,14 @@
                      :md-done.sync="third_step">
                 <md-list>
                     <md-subheader>Выберите атрибуты</md-subheader>
+                    <md-list-item :key="attributes.flesch_kincaid_index.name">
+                        <md-checkbox v-model="attributes.flesch_kincaid_index.checked"/>
+                        <span class="md-list-item-text">{{ attributes.flesch_kincaid_index.name }}</span>
+                    </md-list-item>
+                    <md-list-item :key="attributes.fog_index.name">
+                        <md-checkbox v-model="attributes.fog_index.checked"/>
+                        <span class="md-list-item-text">{{ attributes.fog_index.name }}</span>
+                    </md-list-item>
                     <md-list-item :key="attributes.avg_word_len.name">
                         <md-checkbox v-model="attributes.avg_word_len.checked"/>
                         <span class="md-list-item-text">{{ attributes.avg_word_len.name }}</span>
@@ -51,27 +59,32 @@
             </md-step>
             <md-step id="results_step" md-label="Результаты" md-description="Просмотр результатов"
                      :md-done.sync="results_step">
-                <md-table class="content" v-if="results.attributes.length !== 0" :value="results.attributes" md-sort="name" md-sort-order="asc" md-card>
-                    <md-table-toolbar>
-                        <div class="md-toolbar-section-start">
-                            <h1 class="md-title">Результаты</h1>
-                        </div>
 
-                        <md-field class="md-toolbar-section-end">
-                            <h4>Корреляция: {{results.correlation}}</h4>
-                        </md-field>
-                    </md-table-toolbar>
+                <md-progress-spinner v-if="results.attributes.length === 0" :md-diameter="100" :md-stroke="10"
+                                     md-mode="indeterminate"></md-progress-spinner>
 
-                    <md-table-row slot="md-table-row" slot-scope="{ item }">
-                        <md-table-cell md-label="ID" md-sort-by="id" md-numeric>{{ item.id }}</md-table-cell>
-                        <md-table-cell md-label="Атрибут" md-sort-by="name">{{ item.name }}</md-table-cell>
-                        <md-table-cell md-label="Текст 1" md-sort-by="text1" md-numeric>{{ item.first_text }}</md-table-cell>
-                        <md-table-cell md-label="Текст 2" md-sort-by="text2" md-numeric>{{ item.second_text }}</md-table-cell>
-                    </md-table-row>
+                <template v-if="results.attributes.length !== 0">
+                    <md-table class="content" :value="results.attributes" md-sort="name" md-sort-order="asc" md-card>
+                        <md-table-toolbar>
+                            <div class="md-toolbar-section-start">
+                                <h1 class="md-title">Результаты</h1>
+                            </div>
+                                <h1 class="md-toolbar-section-end">Корреляция: {{results.correlation}}</h1>
+                        </md-table-toolbar>
 
-                </md-table>
-                <md-button class="md-raised md-primary" @click="setDone('third_step', 'results_step')">Продолжить
-                </md-button>
+                        <md-table-row slot="md-table-row" slot-scope="{ item }">
+                            <md-table-cell md-label="ID" md-sort-by="id" md-numeric>{{ item.id }}</md-table-cell>
+                            <md-table-cell md-label="Атрибут" md-sort-by="name">{{ item.name }}</md-table-cell>
+                            <md-table-cell md-label="Текст 1" md-sort-by="text1" md-numeric>{{ item.first_text }}
+                            </md-table-cell>
+                            <md-table-cell md-label="Текст 2" md-sort-by="text2" md-numeric>{{ item.second_text }}
+                            </md-table-cell>
+                        </md-table-row>
+
+                    </md-table>
+                    <md-button class="md-raised md-primary" @click="setDone('third_step', 'results_step')">Продолжить
+                    </md-button>
+                </template>
             </md-step>
         </md-steppers>
     </div>
@@ -96,7 +109,9 @@ export default {
     attributes: {
       'avg_word_len': {name: 'Средняя длина слова (в буквах)', checked: true},
       'avg_sentence_len': {name: 'Средняя длина предложения (в словах)', checked: true},
-      'sentence_len8_count': {name: 'Количество предложений длиннее 8-ми слов', checked: true}
+      'sentence_len8_count': {name: 'Количество предложений длиннее 8-ми слов', checked: true},
+      'flesch_kincaid_index': {name: 'Индекс удобочитаемости Флеша-Кинкейда', checked: true},
+      'fog_index': {name: 'Индекс туманности Ганнинга', checked: true}
     },
     results: {
       'correlation': null,
@@ -157,5 +172,9 @@ export default {
     .md-toolbar {
         margin-top: 16px;
         margin-bottom: 16px;
+    }
+
+    .md-progress-spinner {
+        margin: 24px;
     }
 </style>

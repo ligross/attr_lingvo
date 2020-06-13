@@ -33,8 +33,8 @@ class ResourceOne(Resource):
         payload = {
             'correlation': correlation,
             'attributes': [{'id': ind, 'name': v['name'],
-                            'first_text': v['result'],
-                            'second_text': second_text_results[k]['result']
+                            'first_text': round(v['result'], 2),
+                            'second_text': round(second_text_results[k]['result'], 2)
                             } for ind, (k, v) in enumerate(first_text_results.items(), start=1)],
         }
         current_app.logger.info(f'Results: {payload}')
