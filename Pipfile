@@ -5,11 +5,11 @@ name = "pypi"
 
 [packages]
 gunicorn = "==19.7.1"
-nltk = "==3.5"
-numpy = "==1.18.5"
 flask-restplus = "*"
 python-dotenv = "*"
 flask = "*"
+numpy = "*"
+nltk = "*"
 
 [dev-packages]
 pytest = "*"
