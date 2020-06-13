@@ -2,10 +2,12 @@ from collections import OrderedDict
 
 import nltk
 from nltk.tokenize import word_tokenize
+import pymorphy2
 
 nltk.download('punkt')
 
 VOWELS = 'ауоыиэяюёе'
+MORPH_ANALYZER = pymorphy2.MorphAnalyzer()
 
 
 class Text:
@@ -18,6 +20,17 @@ class Text:
         self.total_words = sum((len(sentence) for sentence in self.sentences_words))
         self.total_syllables, self.total_complex_words = self.__count_total_syllables()
 
+        self.total_nouns = 0
+        self.total_pronouns = 0
+        self.total_adjectives = 0
+        self.total_verbs = 0
+        self.total_verb_forms = 0
+        self.total_adverbs = 0
+        self.total_prepositions = 0
+        self.total_conjunctions = 0
+
+        self.__calculate_total_speech_parts()
+
         self.results = OrderedDict()
 
     def __tokenize_sentences(self):
@@ -25,15 +38,37 @@ class Text:
 
     @staticmethod
     def __tokenize_words(sentence):
-        return list(filter(lambda word: word not in '"#$%&()*+.!?«»,\'-/:;<=>@[]^_`{|}~',
-                           word_tokenize(sentence)))
+        words = filter(lambda w: w not in '"#$%&()*+.!?«»,\'-/:;<=>@[]^_`{|}~',
+                       word_tokenize(sentence))
+        return [(word, MORPH_ANALYZER.parse(word)[0]) for word in words]
+
+    def __calculate_total_speech_parts(self):
+        for sentence in self.sentences_words:
+            for word, parsed_word in sentence:
+                tag = str(parsed_word.tag.POS)
+                if tag in ('NOUN',):
+                    self.total_nouns += 1
+                elif tag in ('NPRO',):
+                    self.total_pronouns += 1
+                elif tag in ('ADJF', 'ADJS'):
+                    self.total_adjectives += 1
+                elif tag in ('VERB', 'INFN'):
+                    self.total_verbs += 1
+                elif tag in ('ADVB',):
+                    self.total_adverbs += 1
+                elif tag in ('PRTF', 'PRTS', 'GRND'):
+                    self.total_verb_forms += 1
+                elif tag in ('PREP',):
+                    self.total_prepositions += 1
+                elif tag in ('CONJ',):
+                    self.total_conjunctions += 1
 
     def __count_total_syllables(self):
         total_syllables = 0
         total_complex_words = 0
         for sentence in self.sentences_words:
             for word in sentence:
-                word = word.lower()
+                word = word[0].lower()
                 syllables_count = sum((1 for symbol in word if symbol in VOWELS))
                 if syllables_count >= 3:
                     total_complex_words += 1
@@ -44,7 +79,7 @@ class Text:
         # array of average word lengths for each sentence
         avg_word_len = []
         for sentence in self.sentences_words:
-            avg_word_len.append(sum((len(word) for word in sentence)) / len(sentence))
+            avg_word_len.append(sum((len(word[0]) for word in sentence)) / len(sentence))
         return sum(avg_word_len) / len(self.sentences_words)
 
     def avg_sent_len_in_words(self):
@@ -66,6 +101,34 @@ class Text:
          The index estimates the years of formal education a person needs to understand the text on the first reading """
         return 0.4 * (0.78 * self.avg_sent_len_in_words() + 100 * (self.total_complex_words / self.total_words))
 
+    def pr_coefficient(self):
+        try:
+            return (self.total_nouns + self.total_pronouns) / (self.total_adjectives + self.total_verbs)
+        except ZeroDivisionError:
+            return 0
+
+    def qu_coefficient(self):
+        try:
+            return (self.total_adjectives + self.total_pronouns) / (self.total_verbs + self.total_nouns)
+        except ZeroDivisionError:
+            return 0
+
+    def ac_coefficient(self):
+        try:
+            return (self.total_verbs + self.total_verb_forms) / self.total_words
+        except ZeroDivisionError:
+            return 0
+
+    def din_coefficient(self):
+        try:
+            return (self.total_verbs + self.total_verb_forms) / \
+                   (self.total_nouns + self.total_adjectives + self.total_pronouns)
+        except ZeroDivisionError:
+            return 0  # TODO is there a better way to handle this?
+
+    def con_coefficient(self):
+        return (self.total_prepositions + self.total_conjunctions) / len(self.sentences)
+
     def calculate_results(self):
         if 'flesch_kincaid_index' in self.attributes.keys():
             self.results['flesch_kincaid_index'] = {'name': self.attributes['flesch_kincaid_index']['name'],
@@ -82,4 +145,19 @@ class Text:
         if 'sentence_len8_count' in self.attributes.keys():
             self.results['sentence_len8_count'] = {'name': self.attributes['sentence_len8_count']['name'],
                                                    'result': self.sentence_len8_count()}
+        if 'pr_coefficient' in self.attributes.keys():
+            self.results['pr_coefficient'] = {'name': self.attributes['pr_coefficient']['name'],
+                                              'result': self.pr_coefficient()}
+        if 'qu_coefficient' in self.attributes.keys():
+            self.results['qu_coefficient'] = {'name': self.attributes['qu_coefficient']['name'],
+                                              'result': self.qu_coefficient()}
+        if 'ac_coefficient' in self.attributes.keys():
+            self.results['ac_coefficient'] = {'name': self.attributes['ac_coefficient']['name'],
+                                              'result': self.ac_coefficient()}
+        if 'din_coefficient' in self.attributes.keys():
+            self.results['din_coefficient'] = {'name': self.attributes['din_coefficient']['name'],
+                                               'result': self.din_coefficient()}
+        if 'con_coefficient' in self.attributes.keys():
+            self.results['con_coefficient'] = {'name': self.attributes['con_coefficient']['name'],
+                                               'result': self.con_coefficient()}
         return self.results

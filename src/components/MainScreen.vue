@@ -53,6 +53,26 @@
                         <md-checkbox v-model="attributes.sentence_len8_count.checked"/>
                         <span class="md-list-item-text">{{ attributes.sentence_len8_count.name }}</span>
                     </md-list-item>
+                    <md-list-item :key="attributes.pr_coefficient.name">
+                        <md-checkbox v-model="attributes.pr_coefficient.checked"/>
+                        <span class="md-list-item-text">{{ attributes.pr_coefficient.name }}</span>
+                    </md-list-item>
+                    <md-list-item :key="attributes.qu_coefficient.name">
+                        <md-checkbox v-model="attributes.qu_coefficient.checked"/>
+                        <span class="md-list-item-text">{{ attributes.qu_coefficient.name }}</span>
+                    </md-list-item>
+                    <md-list-item :key="attributes.ac_coefficient.name">
+                        <md-checkbox v-model="attributes.ac_coefficient.checked"/>
+                        <span class="md-list-item-text">{{ attributes.ac_coefficient.name }}</span>
+                    </md-list-item>
+                    <md-list-item :key="attributes.din_coefficient.name">
+                        <md-checkbox v-model="attributes.din_coefficient.checked"/>
+                        <span class="md-list-item-text">{{ attributes.din_coefficient.name }}</span>
+                    </md-list-item>
+                    <md-list-item :key="attributes.con_coefficient.name">
+                        <md-checkbox v-model="attributes.con_coefficient.checked"/>
+                        <span class="md-list-item-text">{{ attributes.con_coefficient.name }}</span>
+                    </md-list-item>
                 </md-list>
                 <md-button class="md-raised md-primary" @click="setDone('third_step', 'results_step')">Продолжить
                 </md-button>
@@ -69,7 +89,7 @@
                             <div class="md-toolbar-section-start">
                                 <h1 class="md-title">Результаты</h1>
                             </div>
-                                <h1 class="md-toolbar-section-end">Корреляция: {{results.correlation}}</h1>
+                            <h1 class="md-toolbar-section-end">Корреляция: {{results.correlation}}</h1>
                         </md-table-toolbar>
 
                         <md-table-row slot="md-table-row" slot-scope="{ item }">
@@ -109,9 +129,17 @@ export default {
     attributes: {
       'avg_word_len': {name: 'Средняя длина слова (в буквах)', checked: true},
       'avg_sentence_len': {name: 'Средняя длина предложения (в словах)', checked: true},
-      'sentence_len8_count': {name: 'Количество предложений длиннее 8-ми слов', checked: true},
+      'sentence_len8_count': {
+        name: 'Относительное оличество предложений длиннее 8-ми слов, %',
+        checked: true
+      },
       'flesch_kincaid_index': {name: 'Индекс удобочитаемости Флеша-Кинкейда', checked: true},
-      'fog_index': {name: 'Индекс туманности Ганнинга', checked: true}
+      'fog_index': {name: 'Индекс туманности Ганнинга', checked: true},
+      'pr_coefficient': {name: 'Коэффициент предметности (Pr)', checked: true},
+      'qu_coefficient': {name: 'Коэффициент качественности (Qu)', checked: true},
+      'ac_coefficient': {name: 'Коэффициент активности (Ас)', checked: true},
+      'din_coefficient': {name: 'Коэффициент динамизма (Din)', checked: true},
+      'con_coefficient': {name: 'Коэффициент связности текста (Con)', checked: true}
     },
     results: {
       'correlation': null,
