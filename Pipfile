@@ -12,6 +12,8 @@ flask = "==1.0.2"
 numpy = "*"
 nltk = "*"
 pymorphy2 = "*"
+requests = "*"
+pyaspeller = "*"
 
 [dev-packages]
 pytest = "*"

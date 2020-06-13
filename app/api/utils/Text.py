@@ -1,13 +1,25 @@
 from collections import OrderedDict
 
+from pyaspeller import YandexSpeller
+from flask import current_app
 import nltk
 from nltk.tokenize import word_tokenize
 import pymorphy2
 
 nltk.download('punkt')
 
+NAN_ELEMENT = 'N/A'
 VOWELS = 'ауоыиэяюёе'
+
 MORPH_ANALYZER = pymorphy2.MorphAnalyzer()
+SPELLER = YandexSpeller(lang='ru',
+                        find_repeat_words=False,
+                        ignore_digits=True,
+                        ignore_latin=True,
+                        ignore_roman_numerals=True,
+                        ignore_uppercase=True,
+                        ignore_urls=True,
+                        )
 
 
 class Text:
@@ -87,7 +99,7 @@ class Text:
 
     def sentence_len8_count(self):
         """ Count of the sentences which length is more that 8 words in percents"""
-        return sum((1 for sentence in self.sentences_words if len(sentence) > 8)) / len(self.sentences_words)
+        return (sum((1 for sentence in self.sentences_words if len(sentence) > 8)) / len(self.sentences_words)) * 100
 
     def flesch_kincaid_index(self):
         """ The Flesch–Kincaid readability tests are readability tests designed to indicate
@@ -105,29 +117,38 @@ class Text:
         try:
             return (self.total_nouns + self.total_pronouns) / (self.total_adjectives + self.total_verbs)
         except ZeroDivisionError:
-            return 0
+            return NAN_ELEMENT
 
     def qu_coefficient(self):
         try:
             return (self.total_adjectives + self.total_pronouns) / (self.total_verbs + self.total_nouns)
         except ZeroDivisionError:
-            return 0
+            return NAN_ELEMENT
 
     def ac_coefficient(self):
         try:
             return (self.total_verbs + self.total_verb_forms) / self.total_words
         except ZeroDivisionError:
-            return 0
+            return NAN_ELEMENT
 
     def din_coefficient(self):
         try:
             return (self.total_verbs + self.total_verb_forms) / \
                    (self.total_nouns + self.total_adjectives + self.total_pronouns)
         except ZeroDivisionError:
-            return 0  # TODO is there a better way to handle this?
+            return NAN_ELEMENT
 
     def con_coefficient(self):
         return (self.total_prepositions + self.total_conjunctions) / len(self.sentences)
+
+    def get_errors(self):
+        try:
+            errors = list(SPELLER.spell(self.text))
+            current_app.logger.info(f'Found errors: {errors}')
+            return (len(errors) / self.total_words) * 100
+        except Exception as ex:
+            current_app.logger.error(f'Exceptions trying to get/parse errors: {ex}')
+            return NAN_ELEMENT
 
     def calculate_results(self):
         if 'flesch_kincaid_index' in self.attributes.keys():
@@ -160,4 +181,7 @@ class Text:
         if 'con_coefficient' in self.attributes.keys():
             self.results['con_coefficient'] = {'name': self.attributes['con_coefficient']['name'],
                                                'result': self.con_coefficient()}
+        if 'errors' in self.attributes.keys():
+            self.results['errors'] = {'name': self.attributes['errors']['name'],
+                                      'result': self.get_errors()}
         return self.results

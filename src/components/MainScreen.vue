@@ -73,6 +73,10 @@
                         <md-checkbox v-model="attributes.con_coefficient.checked"/>
                         <span class="md-list-item-text">{{ attributes.con_coefficient.name }}</span>
                     </md-list-item>
+                    <md-list-item :key="attributes.errors.name">
+                        <md-checkbox v-model="attributes.errors.checked"/>
+                        <span class="md-list-item-text">{{ attributes.errors.name }}</span>
+                    </md-list-item>
                 </md-list>
                 <md-button class="md-raised md-primary" @click="setDone('third_step', 'results_step')">Продолжить
                 </md-button>
@@ -84,7 +88,7 @@
                                      md-mode="indeterminate"></md-progress-spinner>
 
                 <template v-if="results.attributes.length !== 0">
-                    <md-table class="content" :value="results.attributes" md-sort="name" md-sort-order="asc" md-card>
+                    <md-table class="content" :value="results.attributes" md-sort="id" md-sort-order="asc" md-card>
                         <md-table-toolbar>
                             <div class="md-toolbar-section-start">
                                 <h1 class="md-title">Результаты</h1>
@@ -139,7 +143,8 @@ export default {
       'qu_coefficient': {name: 'Коэффициент качественности (Qu)', checked: true},
       'ac_coefficient': {name: 'Коэффициент активности (Ас)', checked: true},
       'din_coefficient': {name: 'Коэффициент динамизма (Din)', checked: true},
-      'con_coefficient': {name: 'Коэффициент связности текста (Con)', checked: true}
+      'con_coefficient': {name: 'Коэффициент связности текста (Con)', checked: true},
+      'errors': {name: 'Относительное количество орфографических ошибок, %', checked: true}
     },
     results: {
       'correlation': null,
