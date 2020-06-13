@@ -5,9 +5,10 @@ name = "pypi"
 
 [packages]
 gunicorn = "==19.7.1"
-flask-restplus = "*"
+flask-restplus = "==0.12.1"
 python-dotenv = "*"
-flask = "*"
+Werkzeug = "==0.14.1"
+flask = "==1.0.2"
 numpy = "*"
 nltk = "*"
 
