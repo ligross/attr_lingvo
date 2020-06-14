@@ -39,8 +39,9 @@ class ResourceOne(Resource):
         payload = {
             'correlation': round(correlation, 4),
             'attributes': [{'id': ind, 'name': v['name'],
-                            'first_text': round(v['result'], 4),
-                            'second_text': round(second_text_results[k]['result'], 4)
+                            'first_text': round(v['result'], 4) if type(v['result']) is not str else v['result'],
+                            'second_text': round(second_text_results[k]['result'], 4) if type(
+                                second_text_results[k]['result']) is not str else second_text_results[k]['result']
                             } for ind, (k, v) in enumerate(first_text_results.items(), start=1)],
         }
         logger.info(f'Results: {payload}')

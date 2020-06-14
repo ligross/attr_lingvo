@@ -4,14 +4,17 @@ from pyaspeller import YandexSpeller
 from flask import current_app
 import nltk
 from nltk.tokenize import word_tokenize
-import pymorphy2
+
+from app.api.data.intro_words import INTRO_WORDS_REGEXP
+from app.api.data.rules import *
+from app.api.utils.morph_utils import parse_word_morph, parse_sentence_morph, MorphRegexConverter
 
 nltk.download('punkt')
 
 NAN_ELEMENT = 'N/A'
 VOWELS = 'ауоыиэяюёе'
+IPM_MULTIPLIER = 1000000
 
-MORPH_ANALYZER = pymorphy2.MorphAnalyzer()
 SPELLER = YandexSpeller(lang='ru',
                         find_repeat_words=False,
                         ignore_digits=True,
@@ -29,6 +32,7 @@ class Text:
 
         self.sentences = self.__tokenize_sentences()
         self.sentences_words = [self.__tokenize_words(sentence) for sentence in self.sentences]
+        self.morph_parsed_sentences = [parse_sentence_morph(sentence) for sentence in self.sentences]
         self.total_words = sum((len(sentence) for sentence in self.sentences_words))
         self.total_syllables, self.total_complex_words = self.__count_total_syllables()
 
@@ -52,7 +56,7 @@ class Text:
     def __tokenize_words(sentence):
         words = filter(lambda w: w not in '"#$%&()*+.!?«»,\'-/:;<=>@[]^_`{|}~',
                        word_tokenize(sentence))
-        return [(word, MORPH_ANALYZER.parse(word)[0]) for word in words]
+        return [(word, parse_word_morph(word)) for word in words]
 
     def __calculate_total_speech_parts(self):
         for sentence in self.sentences_words:
@@ -92,14 +96,15 @@ class Text:
         avg_word_len = []
         for sentence in self.sentences_words:
             avg_word_len.append(sum((len(word[0]) for word in sentence)) / len(sentence))
-        return sum(avg_word_len) / len(self.sentences_words)
+        return sum(avg_word_len) / len(self.sentences)
 
     def avg_sent_len_in_words(self):
-        return self.total_words / len(self.sentences_words)
+        return self.total_words / len(self.sentences)
 
     def sentence_len8_count(self):
         """ Count of the sentences which length is more that 8 words in percents"""
-        return (sum((1 for sentence in self.sentences_words if len(sentence) > 8)) / len(self.sentences_words)) * 100
+        return (sum((1 for sentence in self.sentences_words if len(sentence) > 8)) / len(
+            self.sentences)) * IPM_MULTIPLIER
 
     def flesch_kincaid_index(self):
         """ The Flesch–Kincaid readability tests are readability tests designed to indicate
@@ -145,10 +150,51 @@ class Text:
         try:
             errors = list(SPELLER.spell(self.text))
             current_app.logger.info(f'Found errors: {errors}')
-            return (len(errors) / self.total_words) * 100
+            return (len(errors) / self.total_words) * IPM_MULTIPLIER
         except Exception as ex:
             current_app.logger.error(f'Exceptions trying to get/parse errors: {ex}')
             return NAN_ELEMENT
+
+    def uniform_rows_count(self):
+        """ IPM of sentences with uniform rows"""
+        for sentence in self.sentences_words:
+            for word in sentence:
+                # tag = str(parsed_word.tag.POS)
+                pass
+        return NAN_ELEMENT
+
+    def introductory_words_count(self):
+        introductory_words_count = 0
+        for sentence in self.sentences:
+            matches = INTRO_WORDS_REGEXP.findall(sentence)
+            introductory_words_count += len(matches)
+        return (introductory_words_count / self.total_words) * IPM_MULTIPLIER
+
+    def comparatives_count(self):
+        comparatives_count = 0
+        converter = MorphRegexConverter(pos=('INFN',))
+        for parsed_sentence, sentence in zip(self.morph_parsed_sentences, self.sentences):
+            pos_matches = COMPARATIVES_REGEX_POS.findall(converter.convert(sentence=parsed_sentence))
+            matches = COMPARATIVES_REGEX.findall(sentence)
+            comparatives_count += len(pos_matches) + len(matches)
+
+        return (comparatives_count / self.total_words) * IPM_MULTIPLIER
+
+    def syntax_splices_count(self):
+        syntax_splices_count = 0
+        converter = MorphRegexConverter(pos=('VERB',))
+        for parsed_sentence, sentence in zip(self.morph_parsed_sentences, self.sentences):
+            pos_matches = SYNTAX_SPLICES_REGEX_POS.findall(converter.convert(sentence=parsed_sentence))
+            matches = SYNTAX_SPLICES_REGEX.findall(sentence)
+            syntax_splices_count += len(pos_matches) + len(matches)
+        return (syntax_splices_count / self.total_words) * IPM_MULTIPLIER
+
+    def comparative_clauses_count(self):
+        comparative_clauses_count = 0
+        for sentence in self.sentences:
+            matches = COMPARATIVE_CLAUSES_REGEX.findall(sentence)
+            comparative_clauses_count += len(matches)
+        return (comparative_clauses_count / self.total_words) * IPM_MULTIPLIER
 
     def calculate_results(self):
         if 'flesch_kincaid_index' in self.attributes.keys():
@@ -184,4 +230,19 @@ class Text:
         if 'errors' in self.attributes.keys():
             self.results['errors'] = {'name': self.attributes['errors']['name'],
                                       'result': self.get_errors()}
+        if 'uniform_rows_count' in self.attributes.keys():
+            self.results['uniform_rows_count'] = {'name': self.attributes['uniform_rows_count']['name'],
+                                                  'result': self.uniform_rows_count()}
+        if 'introductory_words_count' in self.attributes.keys():
+            self.results['introductory_words_count'] = {'name': self.attributes['introductory_words_count']['name'],
+                                                        'result': self.introductory_words_count()}
+        if 'comparatives_count' in self.attributes.keys():
+            self.results['comparatives_count'] = {'name': self.attributes['comparatives_count']['name'],
+                                                  'result': self.comparatives_count()}
+        if 'syntax_splices_count' in self.attributes.keys():
+            self.results['syntax_splices_count'] = {'name': self.attributes['syntax_splices_count']['name'],
+                                                    'result': self.syntax_splices_count()}
+        if 'comparative_clauses_count' in self.attributes.keys():
+            self.results['comparative_clauses_count'] = {'name': self.attributes['comparative_clauses_count']['name'],
+                                                         'result': self.comparative_clauses_count()}
         return self.results

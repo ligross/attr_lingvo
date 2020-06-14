@@ -29,57 +29,91 @@
                 </md-button>
             </md-step>
 
-            <md-step id="third_step" md-label="Выбор атрибутов" md-description="Опциональный шаг"
+            <md-step id="third_step" class="md-layout md-gutter md-alignment-center" md-label="Выбор атрибутов" md-description="Опциональный шаг"
                      :md-done.sync="third_step">
-                <md-list>
-                    <md-subheader>Выберите атрибуты</md-subheader>
-                    <md-list-item :key="attributes.flesch_kincaid_index.name">
-                        <md-checkbox v-model="attributes.flesch_kincaid_index.checked"/>
-                        <span class="md-list-item-text">{{ attributes.flesch_kincaid_index.name }}</span>
-                    </md-list-item>
-                    <md-list-item :key="attributes.fog_index.name">
-                        <md-checkbox v-model="attributes.fog_index.checked"/>
-                        <span class="md-list-item-text">{{ attributes.fog_index.name }}</span>
-                    </md-list-item>
-                    <md-list-item :key="attributes.avg_word_len.name">
-                        <md-checkbox v-model="attributes.avg_word_len.checked"/>
-                        <span class="md-list-item-text">{{ attributes.avg_word_len.name }}</span>
-                    </md-list-item>
-                    <md-list-item :key="attributes.avg_sentence_len.name">
-                        <md-checkbox v-model="attributes.avg_sentence_len.checked"/>
-                        <span class="md-list-item-text">{{ attributes.avg_sentence_len.name }}</span>
-                    </md-list-item>
-                    <md-list-item :key="attributes.sentence_len8_count.name">
-                        <md-checkbox v-model="attributes.sentence_len8_count.checked"/>
-                        <span class="md-list-item-text">{{ attributes.sentence_len8_count.name }}</span>
-                    </md-list-item>
-                    <md-list-item :key="attributes.pr_coefficient.name">
-                        <md-checkbox v-model="attributes.pr_coefficient.checked"/>
-                        <span class="md-list-item-text">{{ attributes.pr_coefficient.name }}</span>
-                    </md-list-item>
-                    <md-list-item :key="attributes.qu_coefficient.name">
-                        <md-checkbox v-model="attributes.qu_coefficient.checked"/>
-                        <span class="md-list-item-text">{{ attributes.qu_coefficient.name }}</span>
-                    </md-list-item>
-                    <md-list-item :key="attributes.ac_coefficient.name">
-                        <md-checkbox v-model="attributes.ac_coefficient.checked"/>
-                        <span class="md-list-item-text">{{ attributes.ac_coefficient.name }}</span>
-                    </md-list-item>
-                    <md-list-item :key="attributes.din_coefficient.name">
-                        <md-checkbox v-model="attributes.din_coefficient.checked"/>
-                        <span class="md-list-item-text">{{ attributes.din_coefficient.name }}</span>
-                    </md-list-item>
-                    <md-list-item :key="attributes.con_coefficient.name">
-                        <md-checkbox v-model="attributes.con_coefficient.checked"/>
-                        <span class="md-list-item-text">{{ attributes.con_coefficient.name }}</span>
-                    </md-list-item>
-                    <md-list-item :key="attributes.errors.name">
-                        <md-checkbox v-model="attributes.errors.checked"/>
-                        <span class="md-list-item-text">{{ attributes.errors.name }}</span>
-                    </md-list-item>
-                </md-list>
-                <md-button class="md-raised md-primary" @click="setDone('third_step', 'results_step')">Продолжить
-                </md-button>
+                <div class="md-layout md-gutter">
+                    <div class="viewport">
+                        <md-list>
+                            <md-subheader>Стилостатистика</md-subheader>
+                            <md-list-item :key="attributes.flesch_kincaid_index.name">
+                                <md-checkbox v-model="attributes.flesch_kincaid_index.checked"/>
+                                <span class="md-list-item-text">{{ attributes.flesch_kincaid_index.name }}</span>
+                            </md-list-item>
+                            <md-list-item :key="attributes.fog_index.name">
+                                <md-checkbox v-model="attributes.fog_index.checked"/>
+                                <span class="md-list-item-text">{{ attributes.fog_index.name }}</span>
+                            </md-list-item>
+                            <md-divider></md-divider>
+                            <md-list-item :key="attributes.avg_word_len.name">
+                                <md-checkbox v-model="attributes.avg_word_len.checked"/>
+                                <span class="md-list-item-text">{{ attributes.avg_word_len.name }}</span>
+                            </md-list-item>
+                            <md-list-item :key="attributes.avg_sentence_len.name">
+                                <md-checkbox v-model="attributes.avg_sentence_len.checked"/>
+                                <span class="md-list-item-text">{{ attributes.avg_sentence_len.name }}</span>
+                            </md-list-item>
+                            <md-list-item :key="attributes.sentence_len8_count.name">
+                                <md-checkbox v-model="attributes.sentence_len8_count.checked"/>
+                                <span class="md-list-item-text">{{ attributes.sentence_len8_count.name }}</span>
+                            </md-list-item>
+                            <md-divider></md-divider>
+                            <md-list-item :key="attributes.pr_coefficient.name">
+                                <md-checkbox v-model="attributes.pr_coefficient.checked"/>
+                                <span class="md-list-item-text">{{ attributes.pr_coefficient.name }}</span>
+                            </md-list-item>
+                            <md-list-item :key="attributes.qu_coefficient.name">
+                                <md-checkbox v-model="attributes.qu_coefficient.checked"/>
+                                <span class="md-list-item-text">{{ attributes.qu_coefficient.name }}</span>
+                            </md-list-item>
+                            <md-list-item :key="attributes.ac_coefficient.name">
+                                <md-checkbox v-model="attributes.ac_coefficient.checked"/>
+                                <span class="md-list-item-text">{{ attributes.ac_coefficient.name }}</span>
+                            </md-list-item>
+                            <md-list-item :key="attributes.din_coefficient.name">
+                                <md-checkbox v-model="attributes.din_coefficient.checked"/>
+                                <span class="md-list-item-text">{{ attributes.din_coefficient.name }}</span>
+                            </md-list-item>
+                            <md-list-item :key="attributes.con_coefficient.name">
+                                <md-checkbox v-model="attributes.con_coefficient.checked"/>
+                                <span class="md-list-item-text">{{ attributes.con_coefficient.name }}</span>
+                            </md-list-item>
+                            <md-divider></md-divider>
+                            <md-list-item :key="attributes.errors.name">
+                                <md-checkbox v-model="attributes.errors.checked"/>
+                                <span class="md-list-item-text">{{ attributes.errors.name }}</span>
+                            </md-list-item>
+                        </md-list>
+                    </div>
+                    <div class="viewport">
+                        <md-list>
+                            <md-subheader>Стилостатистика с когнитивной базой</md-subheader>
+                            <md-list-item :key="attributes.uniform_rows_count.name">
+                                <md-checkbox v-model="attributes.uniform_rows_count.checked"/>
+                                <span class="md-list-item-text">{{ attributes.uniform_rows_count.name }}</span>
+                            </md-list-item>
+                            <md-list-item :key="attributes.introductory_words_count.name">
+                                <md-checkbox v-model="attributes.introductory_words_count.checked"/>
+                                <span class="md-list-item-text">{{ attributes.introductory_words_count.name }}</span>
+                            </md-list-item>
+                            <md-list-item :key="attributes.comparatives_count.name">
+                                <md-checkbox v-model="attributes.comparatives_count.checked"/>
+                                <span class="md-list-item-text">{{ attributes.comparatives_count.name }}</span>
+                            </md-list-item>
+                            <md-list-item :key="attributes.syntax_splices_count.name">
+                                <md-checkbox v-model="attributes.syntax_splices_count.checked"/>
+                                <span class="md-list-item-text">{{ attributes.syntax_splices_count.name }}</span>
+                            </md-list-item>
+                            <md-list-item :key="attributes.comparative_clauses_count.name">
+                                <md-checkbox v-model="attributes.comparative_clauses_count.checked"/>
+                                <span class="md-list-item-text">{{ attributes.comparative_clauses_count.name }}</span>
+                            </md-list-item>
+                        </md-list>
+                    </div>
+                </div>
+                <div class="md-layout md-gutter md-alignment-center">
+                    <md-button class="md-raised md-primary" @click="setDone('third_step', 'results_step')">Продолжить
+                    </md-button>
+                </div>
             </md-step>
             <md-step id="results_step" md-label="Результаты" md-description="Просмотр результатов"
                      :md-done.sync="results_step">
@@ -134,7 +168,7 @@ export default {
       'avg_word_len': {name: 'Средняя длина слова (в буквах)', checked: true},
       'avg_sentence_len': {name: 'Средняя длина предложения (в словах)', checked: true},
       'sentence_len8_count': {
-        name: 'Относительное оличество предложений длиннее 8-ми слов, %',
+        name: 'Количество предложений длиннее 8-ми слов',
         checked: true
       },
       'flesch_kincaid_index': {name: 'Индекс удобочитаемости Флеша-Кинкейда', checked: true},
@@ -144,7 +178,13 @@ export default {
       'ac_coefficient': {name: 'Коэффициент активности (Ас)', checked: true},
       'din_coefficient': {name: 'Коэффициент динамизма (Din)', checked: true},
       'con_coefficient': {name: 'Коэффициент связности текста (Con)', checked: true},
-      'errors': {name: 'Относительное количество орфографических ошибок, %', checked: true}
+      'errors': {name: 'Количество орфографических ошибок', checked: true},
+
+      'uniform_rows_count': {name: 'Предложения с однородными рядами', checked: true},
+      'introductory_words_count': {name: 'Вводные слова и конструкции', checked: true},
+      'comparatives_count': {name: 'Целевые, выделительные и сравнительные обороты', checked: true},
+      'syntax_splices_count': {name: 'Синтаксические сращения', checked: true},
+      'comparative_clauses_count': {name: 'Сравнительные придаточные', checked: true}
     },
     results: {
       'correlation': null,
@@ -209,5 +249,16 @@ export default {
 
     .md-progress-spinner {
         margin: 24px;
+    }
+
+    .viewport {
+        width: 500px;
+        max-width: 100%;
+        display: inline-block;
+        vertical-align: top;
+        overflow: auto;
+        padding-top: 30px;
+        border: 1px solid rgba(#000, .12);
+
     }
 </style>
