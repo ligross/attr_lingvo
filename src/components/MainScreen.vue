@@ -9,6 +9,18 @@
         <md-steppers :md-active-step.sync="active" md-linear>
             <md-step id="first_step" md-label="Первый текст" md-description="Обязательный шаг"
                      :md-done.sync="first_step">
+                <div class="md-layout md-gutter md-alignment-center-center">
+                    <div class="md-layout-item">
+                        <md-field id="firstTextGenre">
+                            <label for="firstTextGenre">Жанр</label>
+                            <md-select v-model="firstTextGenre" name="firstTextGenre">
+                                <md-option v-for="genre in genres" v-bind:value="genre.value" :key="genre.value">{{
+                                    genre.text }}
+                                </md-option>
+                            </md-select>
+                        </md-field>
+                    </div>
+                </div>
                 <md-field md-clearable>
                     <label>Введите первый текст</label>
                     <md-textarea v-model="first_text"></md-textarea>
@@ -20,6 +32,18 @@
 
             <md-step id="second_step" md-label="Второй текст" md-description="Обязательный шаг"
                      :md-done.sync="second_step">
+                <div class="md-layout md-gutter md-alignment-center-center">
+                    <div class="md-layout-item">
+                        <md-field id="secondTextGenre">
+                            <label for="secondTextGenre">Жанр</label>
+                            <md-select v-model="secondTextGenre" name="secondTextGenre">
+                                <md-option v-for="genre in genres" v-bind:value="genre.value" :key="genre.value">{{
+                                    genre.text }}
+                                </md-option>
+                            </md-select>
+                        </md-field>
+                    </div>
+                </div>
                 <md-field md-clearable>
                     <label>Введите второй текст</label>
                     <md-textarea v-model="second_text"></md-textarea>
@@ -29,7 +53,8 @@
                 </md-button>
             </md-step>
 
-            <md-step id="third_step" class="md-layout md-gutter md-alignment-center" md-label="Выбор атрибутов" md-description="Опциональный шаг"
+            <md-step id="third_step" class="md-layout md-gutter md-alignment-center" md-label="Выбор атрибутов"
+                     md-description="Опциональный шаг"
                      :md-done.sync="third_step">
                 <div class="md-layout md-gutter">
                     <div class="viewport">
@@ -111,15 +136,24 @@
                     </div>
                 </div>
                 <div class="md-layout md-gutter md-alignment-center">
-                    <md-button class="md-raised md-primary" @click="setDone('third_step', 'results_step')">Продолжить
+                    <md-button class="md-raised md-primary" :disabled="noAttributesSelected()"
+                               @click="setDone('third_step', 'results_step')">Продолжить
                     </md-button>
                 </div>
             </md-step>
             <md-step id="results_step" md-label="Результаты" md-description="Просмотр результатов"
                      :md-done.sync="results_step">
 
-                <md-progress-spinner v-if="results.attributes.length === 0" :md-diameter="100" :md-stroke="10"
+                <md-progress-spinner v-if="is_processing" :md-diameter="100" :md-stroke="10"
                                      md-mode="indeterminate"></md-progress-spinner>
+                <md-empty-state
+                        v-if='this.error && !this.is_processing'
+                        md-icon="power_off"
+                        md-label="Что-то пошло не так..."
+                        md-description="Пожалуйста, повторите запрос">
+                    <md-button class="md-raised md-primary" @click="setDone('third_step', 'results_step')">Повторить
+                    </md-button>
+                </md-empty-state>
 
                 <template v-if="results.attributes.length !== 0">
                     <md-table class="content" :value="results.attributes" md-sort="id" md-sort-order="asc" md-card>
@@ -157,6 +191,8 @@ import $backend from '../backend'
 export default {
   name: 'MainScreen',
   data: () => ({
+    is_processing: true,
+    error: '',
     active: 'first_step',
     first_step: false,
     second_step: false,
@@ -164,6 +200,15 @@ export default {
     results_step: false,
     first_text: '',
     second_text: '',
+    firstTextGenre: 'fiction',
+    secondTextGenre: 'fiction',
+    genres: [
+      {text: 'художественная проза', value: 'fiction'},
+      {text: 'сетевая литература', value: 'online_literature'},
+      {text: 'сетевая публицистика', value: 'online_journalism'},
+      {text: 'сетевая развлекательная публицистика', value: 'online_entertainment_journalism'},
+      {text: 'корпоративная переписка', value: 'corporate_correspondence'}
+    ],
     attributes: {
       'avg_word_len': {name: 'Средняя длина слова (в буквах)', checked: true},
       'avg_sentence_len': {name: 'Средняя длина предложения (в словах)', checked: true},
@@ -179,7 +224,6 @@ export default {
       'din_coefficient': {name: 'Коэффициент динамизма (Din)', checked: true},
       'con_coefficient': {name: 'Коэффициент связности текста (Con)', checked: true},
       'errors': {name: 'Количество орфографических ошибок', checked: true},
-
       'uniform_rows_count': {name: 'Предложения с однородными рядами', checked: true},
       'introductory_words_count': {name: 'Вводные слова и конструкции', checked: true},
       'comparatives_count': {name: 'Целевые, выделительные и сравнительные обороты', checked: true},
@@ -201,16 +245,29 @@ export default {
         this.getResults()
       }
     },
+    noAttributesSelected () {
+      return Object.keys(this.attributes).filter(key => this.attributes[key]['checked'] === true).length === 0
+    },
     getResults () {
+      this.error = ''
+      this.is_processing = true
+      this.results = {
+        'correlation': null,
+        'attributes': []
+      }
       $backend.getResults({
         'first_text': this.first_text,
+        'first_text_genre': this.first_text_genre,
         'second_text': this.second_text,
+        'second_text_genre': this.second_text_genre,
         'attributes': this.attributes
       })
         .then(responseData => {
           this.results = responseData['results']
           console.log(this.results)
+          this.is_processing = false
         }).catch(error => {
+          this.is_processing = false
           this.error = error.message
         })
     }
@@ -260,5 +317,12 @@ export default {
         padding-top: 30px;
         border: 1px solid rgba(#000, .12);
 
+    }
+</style>
+
+<style lang="css">
+    .md-menu-content.md-select-menu {
+        width: auto;
+        max-width: none;
     }
 </style>

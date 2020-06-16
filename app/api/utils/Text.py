@@ -7,7 +7,7 @@ from nltk.tokenize import word_tokenize
 
 from app.api.data.intro_words import INTRO_WORDS_REGEXP
 from app.api.data.rules import *
-from app.api.utils.morph_utils import parse_word_morph, parse_sentence_morph, MorphRegexConverter
+from app.api.utils.morph_utils import parse_word_morph, parse_sentence_morph, MorphRegexConverter, PUNCTUATION
 
 nltk.download('punkt')
 
@@ -31,9 +31,9 @@ class Text:
         self.attributes = attributes
 
         self.sentences = self.__tokenize_sentences()
-        self.sentences_words = [self.__tokenize_words(sentence) for sentence in self.sentences]
         self.morph_parsed_sentences = [parse_sentence_morph(sentence) for sentence in self.sentences]
-        self.total_words = sum((len(sentence) for sentence in self.sentences_words))
+        self.morph_parsed_sentences_wo_punkt = self.__remove_punkt()
+        self.total_words = self.__count_total_words()
         self.total_syllables, self.total_complex_words = self.__count_total_syllables()
 
         self.total_nouns = 0
@@ -52,14 +52,17 @@ class Text:
     def __tokenize_sentences(self):
         return nltk.sent_tokenize(self.text, language="russian")
 
-    @staticmethod
-    def __tokenize_words(sentence):
-        words = filter(lambda w: w not in '"#$%&()*+.!?«»,\'-/:;<=>@[]^_`{|}~',
-                       word_tokenize(sentence))
-        return [(word, parse_word_morph(word)) for word in words]
+    def __remove_punkt(self):
+        morph_parsed_sentences_wo_punkt = []
+        for sentence in self.morph_parsed_sentences:
+            morph_parsed_sentences_wo_punkt.append([(word, parsed_word) for word, parsed_word in sentence if parsed_word])
+        return morph_parsed_sentences_wo_punkt
+
+    def __count_total_words(self):
+        return sum((len(sentence) for sentence in self.morph_parsed_sentences_wo_punkt))
 
     def __calculate_total_speech_parts(self):
-        for sentence in self.sentences_words:
+        for sentence in self.morph_parsed_sentences_wo_punkt:
             for word, parsed_word in sentence:
                 tag = str(parsed_word.tag.POS)
                 if tag in ('NOUN',):
@@ -82,7 +85,7 @@ class Text:
     def __count_total_syllables(self):
         total_syllables = 0
         total_complex_words = 0
-        for sentence in self.sentences_words:
+        for sentence in self.sentences:
             for word in sentence:
                 word = word[0].lower()
                 syllables_count = sum((1 for symbol in word if symbol in VOWELS))
@@ -94,8 +97,8 @@ class Text:
     def avg_word_len(self):
         # array of average word lengths for each sentence
         avg_word_len = []
-        for sentence in self.sentences_words:
-            avg_word_len.append(sum((len(word[0]) for word in sentence)) / len(sentence))
+        for sentence in self.morph_parsed_sentences_wo_punkt:
+            avg_word_len.append(sum((len(word) for word, parsed_word in sentence)) / len(sentence))
         return sum(avg_word_len) / len(self.sentences)
 
     def avg_sent_len_in_words(self):
@@ -103,7 +106,7 @@ class Text:
 
     def sentence_len8_count(self):
         """ Count of the sentences which length is more that 8 words in percents"""
-        return (sum((1 for sentence in self.sentences_words if len(sentence) > 8)) / len(
+        return (sum((1 for sentence in self.morph_parsed_sentences_wo_punkt if len(sentence) > 8)) / len(
             self.sentences)) * IPM_MULTIPLIER
 
     def flesch_kincaid_index(self):
@@ -157,7 +160,7 @@ class Text:
 
     def uniform_rows_count(self):
         """ IPM of sentences with uniform rows"""
-        for sentence in self.sentences_words:
+        for sentence in self.morph_parsed_sentences:
             for word in sentence:
                 # tag = str(parsed_word.tag.POS)
                 pass

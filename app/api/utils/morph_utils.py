@@ -2,6 +2,7 @@ from nltk.tokenize import word_tokenize
 import itertools
 import pymorphy2
 
+PUNCTUATION = ' "#$%&()*+.!?«»,\'-/:;<=>@[]^_`{|}~'
 MORPH_ANALYZER = pymorphy2.MorphAnalyzer()
 
 
@@ -13,8 +14,8 @@ def parse_sentence_morph(sentence):
     parsed_sentence = []
     ll = [[word_tokenize(w), ' '] for w in sentence.split()]
     for word in list(itertools.chain(*list(itertools.chain(*ll)))):
-        if word in ' "#$%&()*+.!?«»,\'-/:;<=>@[]^_`{|}~':
-            parsed_sentence.append(word)
+        if word in PUNCTUATION:
+            parsed_sentence.append((word, None))
         else:
             parsed_sentence.append((word, parse_word_morph(word)))
     return parsed_sentence
@@ -26,11 +27,10 @@ class MorphRegexConverter:
 
     def convert(self, sentence):
         converted_sentence = ''
-        for word in sentence:
-            if type(word) is str:
+        for word, parsed_word in sentence:
+            if not parsed_word:
                 converted_sentence += word
             else:
-                parsed_word = word[1]
                 if self.pos and parsed_word.tag.POS in self.pos:
                     converted_sentence += parsed_word.tag.POS
                 else:
