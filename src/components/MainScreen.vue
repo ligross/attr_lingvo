@@ -1,5 +1,35 @@
 <template>
     <div class="content">
+        <template v-if="selected !== null">
+            <md-dialog :md-active.sync="showDialog" md-click-outside-to-close>
+                <md-dialog-title>
+                    <div class="md-layout md-gutter md-alignment-center-center">
+                        <div class="md-layout-item">
+                            {{ selected.description}}
+                        </div>
+                        <div class="md-layout md-alignment-center-right">
+                            <md-button class="md-primary md-layout-item md-size-15" @click="showDialog = false">
+                                <md-icon>close</md-icon>
+                            </md-button>
+                        </div>
+                    </div>
+                </md-dialog-title>
+                <md-dialog-content>
+                    <md-tabs>
+                        <md-tab id="text1" md-label="Текст 1" class="md-scrollbar">
+                            <div v-bind:key='item.id' v-for="item in selected.first_text.debug" class="md-scrollbar">
+                                    <p v-html="item">{{ item }}</p>
+                            </div>
+                        </md-tab>
+                        <md-tab id="text2" md-label="Текст 2" class="md-scrollbar">
+                            <div v-bind:key='item.id' v-for="item in selected.second_text.debug" class="md-scrollbar">
+                                   <p v-html="item">{{ item }}</p>
+                            </div>
+                        </md-tab>
+                    </md-tabs>
+                </md-dialog-content>
+            </md-dialog>
+        </template>
         <md-toolbar class="md-transparent">
             <div class="md-toolbar-row">
                 <h3 class="md-title">Тут какое-то название или описание</h3>
@@ -156,24 +186,60 @@
                 </md-empty-state>
 
                 <template v-if="results.attributes.length !== 0">
-                    <md-table class="content" :value="results.attributes" md-sort="id" md-sort-order="asc" md-card>
-                        <md-table-toolbar>
-                            <div class="md-toolbar-section-start">
-                                <h1 class="md-title">Результаты</h1>
-                            </div>
-                            <h1 class="md-toolbar-section-end">Корреляция: {{results.correlation}}</h1>
-                        </md-table-toolbar>
+                    <md-tabs class="md-primary" style="padding: 20px">
+                        <md-tab id="results" md-label="Результаты">
+                            <md-table class="content" :value="results.attributes" md-sort="id" md-sort-order="asc"
+                                      md-fixed-header
+                                      md-card>
+                                <md-table-toolbar>
+                                    <div class="md-toolbar-section-start">
+                                        <h1 class="md-title">Корреляция: {{results.correlation}}</h1>
+                                    </div>
+                                </md-table-toolbar>
 
-                        <md-table-row slot="md-table-row" slot-scope="{ item }">
-                            <md-table-cell md-label="ID" md-sort-by="id" md-numeric>{{ item.id }}</md-table-cell>
-                            <md-table-cell md-label="Атрибут" md-sort-by="name">{{ item.name }}</md-table-cell>
-                            <md-table-cell md-label="Текст 1" md-sort-by="text1" md-numeric>{{ item.first_text }}
-                            </md-table-cell>
-                            <md-table-cell md-label="Текст 2" md-sort-by="text2" md-numeric>{{ item.second_text }}
-                            </md-table-cell>
-                        </md-table-row>
+                                <md-table-row slot="md-table-row" slot-scope="{ item }">
+                                    <md-table-cell md-label="ID" md-sort-by="id" md-numeric>{{ item.id }}
+                                    </md-table-cell>
+                                    <md-table-cell md-label="Атрибут" md-sort-by="name">{{ item.name }}</md-table-cell>
+                                    <md-table-cell md-label="Текст 1" md-sort-by="text1" md-numeric>{{ item.first_text
+                                        }}
+                                    </md-table-cell>
+                                    <md-table-cell md-label="Текст 2" md-sort-by="text2" md-numeric>{{ item.second_text
+                                        }}
+                                    </md-table-cell>
+                                </md-table-row>
 
-                    </md-table>
+                            </md-table>
+                        </md-tab>
+                        <md-tab id="extended" md-label="Вспомогательные параметры">
+                            <md-table class="content" :value="results.extended_attributes" md-sort="id"
+                                      md-sort-order="asc"
+                                      md-fixed-header
+                                      md-card>
+                                <md-table-row slot="md-table-row" slot-scope="{ item }" @click.native="onSelect(item)">
+                                    <md-table-cell md-label="ID" md-sort-by="id" md-numeric>{{ item.id }}
+                                    </md-table-cell>
+                                    <md-table-cell md-label="Атрибут" md-sort-by="name">{{ item.description }}
+                                    </md-table-cell>
+                                    <md-table-cell md-label="Текст 1" md-sort-by="text1" md-numeric>{{
+                                        item.first_text['value'] }}
+                                    </md-table-cell>
+                                    <md-table-cell md-label="Текст 2" md-sort-by="text2" md-numeric>{{
+                                        item.second_text['value'] }}
+                                    </md-table-cell>
+                                    <md-table-cell md-label="Просмотр">
+                                        <md-icon v-if="item.first_text.debug && item.first_text.debug.length > 0">
+                                            visibility
+                                        </md-icon>
+                                        <md-icon v-if="!item.first_text.debug || item.first_text.debug.length === 0">
+                                            visibility_off
+                                        </md-icon>
+                                    </md-table-cell>
+                                </md-table-row>
+                            </md-table>
+                        </md-tab>
+                    </md-tabs>
+
                     <md-button class="md-raised md-primary" @click="setDone('third_step', 'results_step')">Продолжить
                     </md-button>
                 </template>
@@ -191,6 +257,8 @@ import $backend from '../backend'
 export default {
   name: 'MainScreen',
   data: () => ({
+    showDialog: false,
+    selected: null,
     is_processing: true,
     error: '',
     active: 'first_step',
@@ -232,7 +300,8 @@ export default {
     },
     results: {
       'correlation': null,
-      'attributes': []
+      'attributes': [],
+      'extended_attributes': []
     }
   }),
   methods: {
@@ -248,12 +317,20 @@ export default {
     noAttributesSelected () {
       return Object.keys(this.attributes).filter(key => this.attributes[key]['checked'] === true).length === 0
     },
+    onSelect (item) {
+      console.log(item)
+      if (item !== undefined && (item.first_text.debug || item.second_text.debug)) {
+        this.selected = item || this.selected
+        this.showDialog = true
+      }
+    },
     getResults () {
       this.error = ''
       this.is_processing = true
       this.results = {
         'correlation': null,
-        'attributes': []
+        'attributes': [],
+        'extended_attributes': []
       }
       $backend.getResults({
         'first_text': this.first_text,
@@ -266,6 +343,7 @@ export default {
           this.results = responseData['results']
           console.log(this.results)
           this.is_processing = false
+          console.log(this.results)
         }).catch(error => {
           this.is_processing = false
           this.error = error.message

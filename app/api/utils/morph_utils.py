@@ -34,5 +34,5 @@ class MorphRegexConverter:
                 if self.pos and parsed_word.tag.POS in self.pos:
                     converted_sentence += parsed_word.tag.POS
                 else:
-                    converted_sentence += word[0]
+                    converted_sentence += word
         return converted_sentence

@@ -398,4 +398,4 @@ INTRO_WORDS = ('а быть может',
                'шутка сказать',
                'ясное дело')
 
-INTRO_WORDS_REGEXP = re.compile(f'(^|, )({"|".join(INTRO_WORDS)}),', flags=re.IGNORECASE)
+INTRO_WORDS_REGEXP = re.compile(f'(^|,\\s*|;\\s*|:\\s*|-\\s*)({"|".join(INTRO_WORDS)})(,|\.|\\s*-)', flags=re.IGNORECASE)
