@@ -18,12 +18,12 @@
                     <md-tabs>
                         <md-tab id="text1" md-label="Текст 1" class="md-scrollbar">
                             <div v-bind:key='item.id' v-for="item in selected.first_text.debug" class="md-scrollbar">
-                                    <p v-html="item">{{ item }}</p>
+                                <p v-html="item">{{ item }}</p>
                             </div>
                         </md-tab>
                         <md-tab id="text2" md-label="Текст 2" class="md-scrollbar">
                             <div v-bind:key='item.id' v-for="item in selected.second_text.debug" class="md-scrollbar">
-                                   <p v-html="item">{{ item }}</p>
+                                <p v-html="item">{{ item }}</p>
                             </div>
                         </md-tab>
                     </md-tabs>
@@ -86,7 +86,7 @@
             <md-step id="third_step" class="md-layout md-gutter md-alignment-center" md-label="Выбор атрибутов"
                      md-description="Опциональный шаг"
                      :md-done.sync="third_step">
-                <div class="md-layout md-gutter">
+                <div class="md-layout md-gutter" style="justify-content:center">
                     <div class="viewport">
                         <md-list>
                             <md-subheader>Стилостатистика</md-subheader>
@@ -161,6 +161,44 @@
                             <md-list-item :key="attributes.comparative_clauses_count.name">
                                 <md-checkbox v-model="attributes.comparative_clauses_count.checked"/>
                                 <span class="md-list-item-text">{{ attributes.comparative_clauses_count.name }}</span>
+                            </md-list-item>
+                            <md-list-item :key="attributes.collation_clauses_count.name">
+                                <md-checkbox v-model="attributes.collation_clauses_count.checked"/>
+                                <span class="md-list-item-text">{{ attributes.collation_clauses_count.name }}</span>
+                            </md-list-item>
+                            <md-list-item :key="attributes.epenthetic_constructions_count.name">
+                                <md-checkbox v-model="attributes.epenthetic_constructions_count.checked"/>
+                                <span class="md-list-item-text">{{ attributes.epenthetic_constructions_count.name }}</span>
+                            </md-list-item>
+                            <md-list-item :key="attributes.complex_syntax_constructs_count.name">
+                                <md-checkbox v-model="attributes.complex_syntax_constructs_count.checked"/>
+                                <span class="md-list-item-text">{{ attributes.complex_syntax_constructs_count.name }}</span>
+                            </md-list-item>
+                            <md-list-item :key="attributes.single_verb_count.name">
+                                <md-checkbox v-model="attributes.single_verb_count.checked"/>
+                                <span class="md-list-item-text">{{ attributes.single_verb_count.name }}</span>
+                            </md-list-item>
+                            <md-list-item :key="attributes.appeal_count.name">
+                                <md-checkbox v-model="attributes.appeal_count.checked"/>
+                                <span class="md-list-item-text">{{ attributes.appeal_count.name }}</span>
+                            </md-list-item>
+                        </md-list>
+                    </div>
+                    <div class="viewport">
+                        <md-list>
+                            <md-subheader>Описание тезауруса личности</md-subheader>
+                            <md-list-item :key="attributes.dichotomy_pronouns_count.name">
+                                <md-checkbox v-model="attributes.dichotomy_pronouns_count.checked"/>
+                                <span class="md-list-item-text">{{ attributes.dichotomy_pronouns_count.name }}</span>
+                            </md-list-item>
+                        </md-list>
+                    </div>
+                     <div class="viewport">
+                        <md-list>
+                            <md-subheader>Вербально-семантический уровень</md-subheader>
+                            <md-list-item :key="attributes.complex_words_count.name">
+                                <md-checkbox v-model="attributes.complex_words_count.checked"/>
+                                <span class="md-list-item-text">{{ attributes.complex_words_count.name }}</span>
                             </md-list-item>
                         </md-list>
                     </div>
@@ -296,7 +334,14 @@ export default {
       'introductory_words_count': {name: 'Вводные слова и конструкции', checked: true},
       'comparatives_count': {name: 'Целевые, выделительные и сравнительные обороты', checked: true},
       'syntax_splices_count': {name: 'Синтаксические сращения', checked: true},
-      'comparative_clauses_count': {name: 'Сравнительные придаточные', checked: true}
+      'comparative_clauses_count': {name: 'Сравнительные придаточные', checked: true},
+      'collation_clauses_count': {name: 'Сопоставительные придаточные', checked: true},
+      'epenthetic_constructions_count': {name: 'Вставные конструкции', checked: true},
+      'complex_syntax_constructs_count': {name: 'Сложные синтаксические конструкции', checked: true},
+      'single_verb_count': {name: 'Глагольные односоставные предложения', checked: true},
+      'appeal_count': {name: 'Обращения', checked: true},
+      'dichotomy_pronouns_count': {name: 'Дихотомия "свой/чужой"', checked: true},
+      'complex_words_count': {name: 'Сложные слова полуслитного написания', checked: true}
     },
     results: {
       'correlation': null,

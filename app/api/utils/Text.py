@@ -6,7 +6,7 @@ import nltk
 
 from app.api.data.intro_words import INTRO_WORDS_REGEXP
 from app.api.data.rules import *
-from app.api.utils.morph_utils import parse_sentence_morph, MorphRegexConverter
+from app.api.utils.morph_utils import parse_sentence_morph, MorphRegexConverter, ExtendedMorphRegexConverter, parse_word_morph
 from app.api.utils.display_utils import highlight_match
 
 nltk.download('punkt')
@@ -275,6 +275,135 @@ class Text:
                                                               'debug': debug}
         return (comparative_clauses_count / self.total_words) * IPM_MULTIPLIER
 
+    def epenthetic_constructions_count(self):
+        epenthetic_constructions_count = 0
+        debug = []
+        for sentence in self.sentences:
+            matches = list(EPINTHETIC_CONSTRUCTIONS_REGEX.finditer(sentence))
+            if matches:
+                epenthetic_constructions_count += len(matches)
+                debug.append(highlight_match(sentence, matches))
+        self.extended_results['epenthetic_constructions_count'] = {'value': epenthetic_constructions_count,
+                                                                   'description': 'Вставные конструкции',
+                                                                   'debug': debug}
+        return (epenthetic_constructions_count / self.total_words) * IPM_MULTIPLIER
+
+    def collation_clauses_count(self):
+        collation_clauses_count = 0
+        debug = []
+        for sentence in self.sentences:
+            matches = list(COLLATION_CLAUSES_REGEX.finditer(sentence))
+            if matches:
+                collation_clauses_count += len(matches)
+                debug.append(highlight_match(sentence, matches))
+        self.extended_results['collation_clauses_count'] = {'value': collation_clauses_count,
+                                                            'description': 'Сопоставительные придаточные',
+                                                            'debug': debug}
+        return (collation_clauses_count / self.total_words) * IPM_MULTIPLIER
+
+    def complex_syntax_constructs_count(self):
+        complex_syntax_constructs_count = 0
+        debug = []
+        for sentence in self.sentences:
+            matches = list(COMPLEX_SYNTAX_REGEX.finditer(sentence))
+            if matches:
+                complex_syntax_constructs_count += len(matches)
+                debug.append(highlight_match(sentence, matches))
+        self.extended_results['complex_syntax_constructs_count'] = {'value': complex_syntax_constructs_count,
+                                                                    'description': 'Сложные синтаксические конструкции',
+                                                                    'debug': debug}
+        return (complex_syntax_constructs_count / self.total_words) * IPM_MULTIPLIER
+
+    def single_verb_count(self):
+        single_verb_count = 0
+        converter = ExtendedMorphRegexConverter(patterns=[{'pos': ('VERB',),
+                                                           'rename_to': 'VERB',
+                                                           'mood': ('indc',),
+                                                           'tense': ('pres', 'futr'),
+                                                           'number': ('plur', 'sing'),
+                                                           'person': ('1p', '2p'),
+                                                           },
+                                                          {
+                                                              'pos': ('NOUN', 'NPRO'),
+                                                              'number': ('plur', 'sing'),
+                                                              'case': ('nomn',),
+                                                              'rename_to': 'SUBJ'
+                                                          },
+                                                          {
+
+                                                          }])
+        debug = []
+        for parsed_sentence, sentence in zip(self.morph_parsed_sentences, self.sentences):
+            matches = SYNTAX_SPLICES_REGEX_POS.findall(converter.convert(sentence=parsed_sentence))
+            if matches:
+                single_verb_count += len(matches)
+                debug.append(sentence)
+        self.extended_results['single_verb_count'] = {'value': single_verb_count,
+                                                      'description': 'Глагольные односоставные предложения',
+                                                      'debug': debug}
+        return (single_verb_count / self.total_words) * IPM_MULTIPLIER
+
+    def appeal_count(self):
+        appeal_count = 0
+        converter = MorphRegexConverter(tags=('Name', 'Patr', 'Surn'))
+        debug = []
+        for parsed_sentence, sentence in zip(self.morph_parsed_sentences, self.sentences):
+            matches = APPEAL_REGEX.findall(converter.convert(sentence=parsed_sentence))
+            if matches:
+                appeal_count += len(matches)
+                debug.append(sentence)
+        self.extended_results['appeal_count'] = {'value': appeal_count,
+                                                 'description': 'Обращения',
+                                                 'debug': debug}
+        return (appeal_count / self.total_words) * IPM_MULTIPLIER
+
+    def dichotomy_pronouns_count(self):
+        dichotomy_ours_count = 0
+        dichotomy_theirs_count = 0
+        ours_debug, theirs_debug = [], []
+        for parsed_sentence, sentence in zip(self.morph_parsed_sentences_wo_punkt, self.sentences):
+            theirs_found, ours_found = False, False
+            for word in parsed_sentence:
+                if word[1].normal_form in THEIRS_PRONOUNS:
+                    theirs_found = True
+                    dichotomy_theirs_count += 1
+                elif word[1].normal_form in OURS_PRONOUNS:
+                    ours_found = True
+                    dichotomy_ours_count += 1
+            if ours_found:
+                ours_debug.append(sentence)
+            if theirs_found:
+                theirs_debug.append(sentence)
+        self.extended_results['dichotomy_ours_count'] = {'value': dichotomy_ours_count,
+                                                         'description': 'Местоимения "я, мы"-группы',
+                                                         'debug': ours_debug}
+        self.extended_results['dichotomy_theirs_count'] = {
+            'value': dichotomy_theirs_count,
+            'description': 'Местоимения "ты, вы"-группы',
+            'debug': theirs_debug}
+        return (dichotomy_ours_count / self.total_words) * IPM_MULTIPLIER, (
+                dichotomy_theirs_count / self.total_words) * IPM_MULTIPLIER
+
+    def complex_words_count(self):
+        complex_words_count = 0
+        debug = []
+        for sentence in self.sentences:
+            raw_matches = list(COMPLEX_WORDS_REGEX.finditer(sentence))
+            matches = []
+            for raw_match in raw_matches:
+                first_word, second_word = raw_match.string[raw_match.start():raw_match.end()].replace('—', '-').split('-')
+                first_word, second_word = parse_word_morph(first_word), parse_word_morph(second_word)
+                if first_word.tag.case == second_word.tag.case \
+                        and first_word.tag.number == second_word.tag.number:
+                    matches.append(raw_match)
+            if matches:
+                complex_words_count += len(matches)
+                debug.append(highlight_match(sentence, matches))
+        self.extended_results['complex_words_count'] = {'value': complex_words_count,
+                                                        'description': 'Сложные слова полуслитного написания',
+                                                        'debug': debug}
+        return (complex_words_count / self.total_words) * IPM_MULTIPLIER
+
     def calculate_results(self):
         if 'flesch_kincaid_index' in self.attributes.keys():
             self.results['flesch_kincaid_index'] = {'name': self.attributes['flesch_kincaid_index']['name'],
@@ -324,4 +453,36 @@ class Text:
         if 'comparative_clauses_count' in self.attributes.keys():
             self.results['comparative_clauses_count'] = {'name': self.attributes['comparative_clauses_count']['name'],
                                                          'result': self.comparative_clauses_count()}
+        if 'collation_clauses_count' in self.attributes.keys():
+            self.results['collation_clauses_count'] = {
+                'name': self.attributes['collation_clauses_count']['name'],
+                'result': self.collation_clauses_count()}
+        if 'epenthetic_constructions_count' in self.attributes.keys():
+            self.results['epenthetic_constructions_count'] = {
+                'name': self.attributes['epenthetic_constructions_count']['name'],
+                'result': self.epenthetic_constructions_count()}
+        if 'complex_syntax_constructs_count' in self.attributes.keys():
+            self.results['complex_syntax_constructs_count'] = {
+                'name': self.attributes['complex_syntax_constructs_count']['name'],
+                'result': self.complex_syntax_constructs_count()}
+        # if 'single_verb_count' in self.attributes.keys():
+        #    self.results['single_verb_count'] = {
+        #        'name': self.attributes['single_verb_count']['name'],
+        #        'result': self.single_verb_count()}
+        if 'appeal_count' in self.attributes.keys():
+            self.results['appeal_count'] = {
+                'name': self.attributes['appeal_count']['name'],
+                'result': self.appeal_count()}
+        if 'dichotomy_pronouns_count' in self.attributes.keys():
+            dichotomy_ours_count, dichotomy_theirs_count = self.dichotomy_pronouns_count()
+            self.results['dichotomy_ours_count'] = {
+                'name': 'Местоимения "я, мы"-группы',
+                'result': dichotomy_ours_count}
+            self.results['dichotomy_theirs_count'] = {
+                'name': 'Местоимения "ты, вы"-группы',
+                'result': dichotomy_theirs_count}
+        if 'complex_words_count' in self.attributes.keys():
+            self.results['complex_words_count'] = {
+                'name': self.attributes['complex_words_count']['name'],
+                'result': self.complex_words_count()}
         return self.results, self.extended_results
