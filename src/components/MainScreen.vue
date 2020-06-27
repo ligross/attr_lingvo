@@ -193,12 +193,16 @@
                             </md-list-item>
                         </md-list>
                     </div>
-                     <div class="viewport">
+                    <div class="viewport">
                         <md-list>
                             <md-subheader>Вербально-семантический уровень</md-subheader>
                             <md-list-item :key="attributes.complex_words_count.name">
                                 <md-checkbox v-model="attributes.complex_words_count.checked"/>
                                 <span class="md-list-item-text">{{ attributes.complex_words_count.name }}</span>
+                            </md-list-item>
+                            <md-list-item :key="attributes.modal_particles_count.name">
+                                <md-checkbox v-model="attributes.modal_particles_count.checked"/>
+                                <span class="md-list-item-text">{{ attributes.modal_particles_count.name }}</span>
                             </md-list-item>
                         </md-list>
                     </div>
@@ -341,7 +345,8 @@ export default {
       'single_verb_count': {name: 'Глагольные односоставные предложения', checked: true},
       'appeal_count': {name: 'Обращения', checked: true},
       'dichotomy_pronouns_count': {name: 'Дихотомия "свой/чужой"', checked: true},
-      'complex_words_count': {name: 'Сложные слова полуслитного написания', checked: true}
+      'complex_words_count': {name: 'Сложные слова полуслитного написания', checked: true},
+      'modal_particles_count': {name: 'Модальные частицы', checked: true}
     },
     results: {
       'correlation': null,

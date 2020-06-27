@@ -5,8 +5,10 @@ from flask import current_app
 import nltk
 
 from app.api.data.intro_words import INTRO_WORDS_REGEXP
+from app.api.data.modal_particles import MODAL_PARTICLES_REGEX
 from app.api.data.rules import *
-from app.api.utils.morph_utils import parse_sentence_morph, MorphRegexConverter, ExtendedMorphRegexConverter, parse_word_morph
+from app.api.utils.morph_utils import parse_sentence_morph, MorphRegexConverter, ExtendedMorphRegexConverter, \
+    parse_word_morph
 from app.api.utils.display_utils import highlight_match
 
 nltk.download('punkt')
@@ -391,7 +393,8 @@ class Text:
             raw_matches = list(COMPLEX_WORDS_REGEX.finditer(sentence))
             matches = []
             for raw_match in raw_matches:
-                first_word, second_word = raw_match.string[raw_match.start():raw_match.end()].replace('—', '-').split('-')
+                first_word, second_word = raw_match.string[raw_match.start():raw_match.end()].replace('—', '-').split(
+                    '-')
                 first_word, second_word = parse_word_morph(first_word), parse_word_morph(second_word)
                 if first_word.tag.case == second_word.tag.case \
                         and first_word.tag.number == second_word.tag.number:
@@ -403,6 +406,19 @@ class Text:
                                                         'description': 'Сложные слова полуслитного написания',
                                                         'debug': debug}
         return (complex_words_count / self.total_words) * IPM_MULTIPLIER
+
+    def modal_particles_count(self):
+        modal_particles_count = 0
+        debug = []
+        for sentence in self.sentences:
+            matches = list(MODAL_PARTICLES_REGEX.finditer(sentence))
+            if matches:
+                modal_particles_count += len(matches)
+                debug.append(highlight_match(sentence, matches))
+        self.extended_results['modal_particles_count'] = {'value': modal_particles_count,
+                                                          'description': 'Модальные частицы',
+                                                          'debug': debug}
+        return (modal_particles_count / self.total_words) * IPM_MULTIPLIER
 
     def calculate_results(self):
         if 'flesch_kincaid_index' in self.attributes.keys():
@@ -485,4 +501,8 @@ class Text:
             self.results['complex_words_count'] = {
                 'name': self.attributes['complex_words_count']['name'],
                 'result': self.complex_words_count()}
+        if 'modal_particles_count' in self.attributes.keys():
+            self.results['modal_particles_count'] = {
+                'name': self.attributes['modal_particles_count']['name'],
+                'result': self.modal_particles_count()}
         return self.results, self.extended_results
