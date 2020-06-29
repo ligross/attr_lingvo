@@ -204,6 +204,18 @@
                                 <md-checkbox v-model="attributes.modal_particles_count.checked"/>
                                 <span class="md-list-item-text">{{ attributes.modal_particles_count.name }}</span>
                             </md-list-item>
+                            <md-list-item :key="attributes.interjections_count.name">
+                                <md-checkbox v-model="attributes.interjections_count.checked"/>
+                                <span class="md-list-item-text">{{ attributes.interjections_count.name }}</span>
+                            </md-list-item>
+                            <md-list-item :key="attributes.modal_postfix_count.name">
+                                <md-checkbox v-model="attributes.modal_postfix_count.checked"/>
+                                <span class="md-list-item-text">{{ attributes.modal_postfix_count.name }}</span>
+                            </md-list-item>
+                            <md-list-item :key="attributes.intensifiers_count.name">
+                                <md-checkbox v-model="attributes.intensifiers_count.checked"/>
+                                <span class="md-list-item-text">{{ attributes.intensifiers_count.name }}</span>
+                            </md-list-item>
                         </md-list>
                     </div>
                 </div>
@@ -346,7 +358,10 @@ export default {
       'appeal_count': {name: 'Обращения', checked: true},
       'dichotomy_pronouns_count': {name: 'Дихотомия "свой/чужой"', checked: true},
       'complex_words_count': {name: 'Сложные слова полуслитного написания', checked: true},
-      'modal_particles_count': {name: 'Модальные частицы', checked: true}
+      'modal_particles_count': {name: 'Модальные частицы', checked: true},
+      'interjections_count': {name: 'Междометия', checked: true},
+      'modal_postfix_count': {name: 'Наличие/отсутствие модального постфикса «-то»', checked: true},
+      'intensifiers_count': {name: 'Предпочтительные слова-интенсификаторы', checked: true}
     },
     results: {
       'correlation': null,

@@ -5,7 +5,9 @@ from flask import current_app
 import nltk
 
 from app.api.data.intro_words import INTRO_WORDS_REGEXP
+from app.api.data.intensifiers import INTENSIFIERS_REGEX
 from app.api.data.modal_particles import MODAL_PARTICLES_REGEX
+from app.api.data.interjections import INTERJECTIONS_REGEXP
 from app.api.data.rules import *
 from app.api.utils.morph_utils import parse_sentence_morph, MorphRegexConverter, ExtendedMorphRegexConverter, \
     parse_word_morph
@@ -420,6 +422,86 @@ class Text:
                                                           'debug': debug}
         return (modal_particles_count / self.total_words) * IPM_MULTIPLIER
 
+    def modal_postfix_count(self):
+        modal_postfix_count = 0
+        debug = []
+        for sentence in self.sentences:
+            raw_matches = list(MODAL_POSTFIX_REGEX.finditer(sentence))
+            if raw_matches:
+                matches = list(filter(lambda x: parse_word_morph(
+                    sentence[x.start():x.end()].strip()).normal_form not in MODAL_POSTFIX_EXCLUSIONS,
+                                      raw_matches))
+                modal_postfix_count += len(matches)
+                debug.append(highlight_match(sentence, matches))
+        self.extended_results['modal_postfix_count'] = {'value': modal_postfix_count,
+                                                        'description': 'Наличие/отсутствие модального постфикса «-то»',
+                                                        'debug': debug}
+        return (modal_postfix_count / self.total_words) * IPM_MULTIPLIER
+
+    def interjections_count(self):
+        interjections_count = 0
+        debug = []
+        for sentence in self.sentences:
+            matches = list(INTERJECTIONS_REGEXP.finditer(sentence))
+            if matches:
+                interjections_count += len(matches)
+                debug.append(highlight_match(sentence, matches))
+        self.extended_results['interjections_count'] = {'value': interjections_count,
+                                                        'description': 'Междометия',
+                                                        'debug': debug}
+        return (interjections_count / self.total_words) * IPM_MULTIPLIER
+
+    def intensifiers_count(self):
+        intensifiers_count = 0
+        debug = []
+        for sentence in self.sentences:
+            raw_matches = list(INTENSIFIERS_REGEX.finditer(sentence))
+            matches = []
+            for raw_match in raw_matches:
+                substring = sentence[raw_match.start():raw_match.end()].lower()
+                left_word, punkt1, main_word, punkt2, right_word = map(lambda s: s.lower() if s else s,
+                                                                       raw_match.groups())
+                left_word_pos, right_word_pos = parse_word_morph(left_word).tag.POS if left_word else None, \
+                                                parse_word_morph(right_word).tag.POS if right_word else None
+                # general rule for all words
+                if left_word_pos in VERB_FORMS or right_word_pos in VERB_FORMS:
+                    continue
+                if 'действительно' in substring and ',' in substring:
+                    continue
+                if main_word in ('какой', 'какого', 'какому', 'каком', 'какое') \
+                        and right_word_pos not in ('ADJF', 'ADJS', 'NOUN', 'ADVB', 'NPRO') \
+                        and right_word not in ('уж', 'тут', 'здесь', 'такой', 'такая', 'такое'):
+                    continue
+                if any(word in main_word for word in ('настоящ', 'невероятн', 'чист', 'сущ')) \
+                        and main_word != 'невероятно' \
+                        and right_word_pos != 'NOUN':
+                    continue
+                if 'страшн' in main_word and main_word != 'страшно' and right_word_pos != 'NOUN':
+                    continue
+                if main_word == 'страшно' and right_word_pos not in ('ADJF', 'ADJS'):
+                    continue
+                if main_word == 'немного' and right_word_pos not in ('ADJF', 'ADJS'):
+                    continue
+                if main_word == 'так':
+                    if ',' in punkt2:
+                        continue
+                    if right_word_pos not in ('ADJS', 'ADVB', 'PRTF', 'PRTS') \
+                            and left_word_pos not in ('ADJS', 'ADVB'):
+                        continue
+                if 'так' in main_word and right_word_pos not in ('ADJF', 'ADJS', 'ADVB', 'NPRO'):
+                    continue
+                if main_word == 'чуть' and right_word not in ('ли', 'не') and right_word_pos not in ('ADJF', 'ADJS'):
+                    continue
+
+                matches.append(raw_match)
+            if matches:
+                intensifiers_count += len(matches)
+                debug.append(highlight_match(sentence, matches))
+        self.extended_results['intensifiers_count'] = {'value': intensifiers_count,
+                                                       'description': 'Предпочтительные слова-интенсификаторы',
+                                                       'debug': debug}
+        return (intensifiers_count / self.total_words) * IPM_MULTIPLIER
+
     def calculate_results(self):
         if 'flesch_kincaid_index' in self.attributes.keys():
             self.results['flesch_kincaid_index'] = {'name': self.attributes['flesch_kincaid_index']['name'],
@@ -505,4 +587,16 @@ class Text:
             self.results['modal_particles_count'] = {
                 'name': self.attributes['modal_particles_count']['name'],
                 'result': self.modal_particles_count()}
+        if 'interjections_count' in self.attributes.keys():
+            self.results['interjections_count'] = {
+                'name': self.attributes['interjections_count']['name'],
+                'result': self.interjections_count()}
+        if 'modal_postfix_count' in self.attributes.keys():
+            self.results['modal_postfix_count'] = {
+                'name': self.attributes['modal_postfix_count']['name'],
+                'result': self.modal_postfix_count()}
+        if 'intensifiers_count' in self.attributes.keys():
+            self.results['intensifiers_count'] = {
+                'name': self.attributes['intensifiers_count']['name'],
+                'result': self.intensifiers_count()}
         return self.results, self.extended_results
