@@ -14,6 +14,17 @@ UNIFORM_ROWS = (
     r'(NOUN и NOUN,\s*(а|но) NOUN)',
 )
 
+SENTENCES_SPLIT_LIST = (
+    r'([^,]\n+\s+\n+)',
+    r'(\n+([А-Я]{1}))'
+)
+
+ADDITIONAL_ABBREVIATIONS = (
+    'оф',
+    'производствен',
+    *set(map(str, range(0, 100))),
+)
+
 COLLATION_ROWS = (
     r'(если .+,\s*то .+$)',
     r'(между тем как .+,.+$)',
@@ -75,3 +86,6 @@ OURS_PRONOUNS, THEIRS_PRONOUNS = ('я', 'мы', 'ты'), ('он', 'она', 'о�
 COMPLEX_WORDS_REGEX = re.compile(r'([a-я]+(-|—)[а-я]+)', flags=re.IGNORECASE)
 
 MODAL_POSTFIX_REGEX = re.compile(r'[a-я]+(\-|\—)то(\s+|!|\?|.|$)', flags=re.IGNORECASE)
+
+SENTENCES_SPLIT_REGEX = re.compile(r'\n+\s*\n+')
+SENTENCES_SPLIT_ADD_REGEX = re.compile(r'(\n+)([А-Я]{1})([^А-Я]{1})')

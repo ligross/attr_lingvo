@@ -1,0 +1,8 @@
+/var/log/attr_lingvo.log {
+        daily
+        dateext
+        missingok
+        rotate 30
+        compress
+        copytruncate
+}

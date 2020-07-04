@@ -1,10 +1,59 @@
-from nltk.tokenize import word_tokenize
 import itertools
+
+import nltk
 import pymorphy2
+from nltk.data import load
+from nltk.tokenize import word_tokenize
+
+from app.api.rules.rules import SENTENCES_SPLIT_REGEX, ADDITIONAL_ABBREVIATIONS, SENTENCES_SPLIT_ADD_REGEX
 
 PUNCTUATION = ' "#$%&()*+.!?«»,\'-/:;<=>@[]^_`{|}~'
 MORPH_ANALYZER = pymorphy2.MorphAnalyzer()
 TAG = MORPH_ANALYZER.TagClass
+
+nltk.download('punkt')
+
+TOKENIZER = load("tokenizers/punkt/{0}.pickle".format('russian'))
+TOKENIZER._params.abbrev_types.update(ADDITIONAL_ABBREVIATIONS)
+
+
+def tokenize_sentences(text):
+    return TOKENIZER.tokenize(text)
+
+
+def tokenize_corp_sentences(text):
+    raw_sentences = TOKENIZER.tokenize(text)
+    sentences = []
+    for raw_sentence in raw_sentences:
+        new_sentences = SENTENCES_SPLIT_REGEX.split(raw_sentence)
+        skip_next = False
+        for ind, new_sentence in enumerate(new_sentences):
+            #sentences = new_sentence.split()
+            # matches = list(SENTENCES_SPLIT_ADD_REGEX.finditer(new_sentence))
+            # if matches:
+            #     current_pos = 0
+            #     for ind, match in enumerate(matches):
+            #         if ind == 0:
+            #             sentences.append(new_sentence[:match.start()])
+            #             current_pos = match.end() - len(match.groups())
+            #         else:
+            #             sentences.append(new_sentence[current_pos:match.start()])
+            #             current_pos = match.end() - len(match.groups())
+            #     sentences.append(new_sentence[current_pos:])
+            # else:
+            #     sentences.append(new_sentence)
+            if skip_next:
+                continue
+            if new_sentence[-1] in (',',) and ind < len(new_sentences) - 1:
+                sentences.append(' '.join((new_sentence, new_sentences[ind + 1])))
+                skip_next = True
+            elif ind < len(new_sentences) - 1 and new_sentences[ind + 1][0].islower() and new_sentence[-1] not in ',.?!':
+                sentences.append(' '.join((new_sentence, new_sentences[ind + 1])))
+                skip_next = True
+            else:
+                new_sentence = new_sentence.replace('\n', ' ')
+                sentences.append(new_sentence)
+    return sentences
 
 
 def parse_word_morph(word):

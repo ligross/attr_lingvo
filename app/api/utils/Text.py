@@ -2,18 +2,15 @@ from collections import OrderedDict
 
 from pyaspeller import YandexSpeller
 from flask import current_app
-import nltk
 
-from app.api.data.intro_words import INTRO_WORDS_REGEXP
-from app.api.data.intensifiers import INTENSIFIERS_REGEX
-from app.api.data.modal_particles import MODAL_PARTICLES_REGEX
-from app.api.data.interjections import INTERJECTIONS_REGEXP
-from app.api.data.rules import *
+from app.api.rules.intro_words import INTRO_WORDS_REGEXP
+from app.api.rules.intensifiers import INTENSIFIERS_REGEX
+from app.api.rules.modal_particles import MODAL_PARTICLES_REGEX
+from app.api.rules.interjections import INTERJECTIONS_REGEXP
+from app.api.rules.rules import *
 from app.api.utils.morph_utils import parse_sentence_morph, MorphRegexConverter, ExtendedMorphRegexConverter, \
-    parse_word_morph
+    parse_word_morph, tokenize_sentences, tokenize_corp_sentences
 from app.api.utils.display_utils import highlight_match
-
-nltk.download('punkt')
 
 NAN_ELEMENT = 'N/A'
 VOWELS = 'ауоыиэяюёе'
@@ -30,9 +27,10 @@ SPELLER = YandexSpeller(lang='ru',
 
 
 class Text:
-    def __init__(self, text, attributes):
+    def __init__(self, text, genre, attributes):
         self.text = text
         self.attributes = attributes
+        self.genre = genre
 
         self.sentences = self.__tokenize_sentences()
         self.morph_parsed_sentences = [parse_sentence_morph(sentence) for sentence in self.sentences]
@@ -55,7 +53,10 @@ class Text:
         self.extended_results = self.__create_extended_results()
 
     def __tokenize_sentences(self):
-        return nltk.sent_tokenize(self.text, language="russian")
+        if self.genre == 'corporate_correspondence':
+            return tokenize_corp_sentences(self.text)
+        else:
+            return tokenize_sentences(self.text)
 
     def __remove_punkt(self):
         morph_parsed_sentences_wo_punkt = []

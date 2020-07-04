@@ -1,0 +1,10 @@
+numpy = "*"
+nltk = "*"
+pymorphy2 = "*"
+requests = "*"
+pyaspeller = "*"
+
+pytest = "*"
+bumpversion = "*"
+pytest-sugar = "*"
+pytest-cov = "*"

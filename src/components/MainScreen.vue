@@ -43,7 +43,7 @@
                     <div class="md-layout-item">
                         <md-field id="firstTextGenre">
                             <label for="firstTextGenre">Жанр</label>
-                            <md-select v-model="firstTextGenre" name="firstTextGenre">
+                            <md-select v-model="first_text_genre" name="firstTextGenre">
                                 <md-option v-for="genre in genres" v-bind:value="genre.value" :key="genre.value">{{
                                     genre.text }}
                                 </md-option>
@@ -66,7 +66,7 @@
                     <div class="md-layout-item">
                         <md-field id="secondTextGenre">
                             <label for="secondTextGenre">Жанр</label>
-                            <md-select v-model="secondTextGenre" name="secondTextGenre">
+                            <md-select v-model="second_text_genre" name="secondTextGenre">
                                 <md-option v-for="genre in genres" v-bind:value="genre.value" :key="genre.value">{{
                                     genre.text }}
                                 </md-option>
@@ -322,8 +322,8 @@ export default {
     results_step: false,
     first_text: '',
     second_text: '',
-    firstTextGenre: 'fiction',
-    secondTextGenre: 'fiction',
+    first_text_genre: 'fiction',
+    second_text_genre: 'fiction',
     genres: [
       {text: 'художественная проза', value: 'fiction'},
       {text: 'сетевая литература', value: 'online_literature'},
@@ -397,13 +397,14 @@ export default {
         'attributes': [],
         'extended_attributes': []
       }
-      $backend.getResults({
+      let payload = {
         'first_text': this.first_text,
         'first_text_genre': this.first_text_genre,
         'second_text': this.second_text,
         'second_text_genre': this.second_text_genre,
         'attributes': this.attributes
-      })
+      }
+      $backend.getResults(payload)
         .then(responseData => {
           this.results = responseData['results']
           console.log(this.results)

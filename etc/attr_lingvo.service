@@ -1,0 +1,11 @@
+[Unit]
+Description=Attributive Linguistics App
+
+[Service]
+ExecStart=/usr/local/bin/gunicorn app:app --preload --timeout 900  --backlog 10 --log-level DEBUG --log-file /var/log/attr_lingvo.log --access-logfile /var/log/attr_lingvo.log --error-logfile /var/log/attr_lingvo.log --workers=10 -b 0.0.0.0:5000 --pid /var/run/attr_lingvo.pid --chdir=/opt/attr_lingvo --access-logformat '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" "%(D)s" "%(p)s"'
+LimitNOFILE=100000
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
