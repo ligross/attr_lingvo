@@ -3,22 +3,16 @@ REST API Resource Routing
 http://flask-restplus.readthedocs.io
 """
 
-from datetime import datetime
 import logging
-from flask import request, current_app
+
+from flask import request
 from flask_restplus import Resource
 
-from . import api_rest
 from app.api.utils.Text import Text
 from app.api.utils.correlation import calculate_correlation
+from . import api_rest
 
-logging.basicConfig(format='[%(asctime)s.%(msecs)dZ] [%(levelname)s] [pid:%(process)d] [%(module)s] %(message)s',
-                    datefmt='%Y-%m-%dT%H:%M:%S',
-                    level=logging.INFO)
-
-logger = logging.getLogger('main')
-handler = logging.StreamHandler()
-logger.addHandler(handler)
+logger = logging.getLogger()
 
 
 @api_rest.route('/results/calculate')
@@ -26,11 +20,13 @@ class ResourceOne(Resource):
 
     def post(self):
         json_payload = request.json
-        #logger.info(f'Received json payload: {json_payload}')
+        # logger.info(f'Received json payload: {json_payload}')
 
         attributes = {k: v for k, v in json_payload['attributes'].items() if v['checked'] is True}
-        first_text_results = Text(json_payload['first_text'], json_payload['first_text_genre'], attributes).calculate_results()
-        second_text_results = Text(json_payload['second_text'], json_payload['second_text_genre'], attributes).calculate_results()
+        first_text_results = Text(json_payload['first_text'], json_payload['first_text_genre'],
+                                  attributes).calculate_results()
+        second_text_results = Text(json_payload['second_text'], json_payload['second_text_genre'],
+                                   attributes).calculate_results()
         correlation = calculate_correlation(
             list(map(lambda k: k[1]['result'], first_text_results[0].items())),
             list(map(lambda k: k[1]['result'], second_text_results[0].items()))

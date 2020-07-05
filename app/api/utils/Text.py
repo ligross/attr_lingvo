@@ -484,7 +484,7 @@ class Text:
                 if main_word == 'немного' and right_word_pos not in ('ADJF', 'ADJS'):
                     continue
                 if main_word == 'так':
-                    if ',' in punkt2:
+                    if punkt2 and ',' in punkt2:
                         continue
                     if right_word_pos not in ('ADJS', 'ADVB', 'PRTF', 'PRTS') \
                             and left_word_pos not in ('ADJS', 'ADVB'):
