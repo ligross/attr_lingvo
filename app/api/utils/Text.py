@@ -134,7 +134,7 @@ class Text:
     def __count_total_syllables(self):
         total_syllables = 0
         total_complex_words = 0
-        for sentence in self.sentences:
+        for sentence in self.morph_parsed_sentences_wo_punkt:
             for word in sentence:
                 word = word[0].lower()
                 syllables_count = sum((1 for symbol in word if symbol in VOWELS))
