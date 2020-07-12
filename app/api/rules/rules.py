@@ -64,11 +64,11 @@ VERB_FORMS = ('VERB', 'INFN', 'PRTF', 'PRTS', 'GRND')
 
 UNIFORM_ROWS_REGEX = re.compile('|'.join(UNIFORM_ROWS), flags=re.IGNORECASE)
 
-COMPARATIVES_REGEX_POS = re.compile('(с целью|из расч(е|ё)та) INFN', flags=re.IGNORECASE)
-COMPARATIVES_REGEX = re.compile('(кроме|помимо|включая|наряду с)|(как|будто)', flags=re.IGNORECASE)
+COMPARATIVES_REGEX_POS = re.compile('(^|[\\s,:\-—«»"\'])(с целью|из расч(е|ё)та) INFN($|[\\s,.:\-—«»"\'])', flags=re.IGNORECASE)
+COMPARATIVES_REGEX = re.compile('(^|[\\s,:\-—«»"\'])(кроме|помимо|включая|наряду с)|(как|будто)($|[\\s,.:\-—«»"\'])', flags=re.IGNORECASE)
 
-SYNTAX_SPLICES_REGEX_POS = re.compile('(VERB (да и|да) VERB)', flags=re.IGNORECASE)
-SYNTAX_SPLICES_REGEX = re.compile(r'(что было,\s*то было|что было,\s*то и есть|что было,\s*то есть|что есть,\s*то есть|что есть,\s*то и есть|что есть,\s*то и будет|что есть,\s*то будет)',
+SYNTAX_SPLICES_REGEX_POS = re.compile('(^|[\\s,:\-—«»"\'])(VERB (да и|да) VERB)($|[\\s,.:\-—«»"\'])', flags=re.IGNORECASE)
+SYNTAX_SPLICES_REGEX = re.compile(r'(^|[\\s,:\-—«»"\'])(что было,\s*то было|что было,\s*то и есть|что было,\s*то есть|что есть,\s*то есть|что есть,\s*то и есть|что есть,\s*то и будет|что есть,\s*то будет)($|[\\s,.:\-—«»"\'])',
                                   flags=re.IGNORECASE)
 
 COMPARATIVE_CLAUSES_REGEX = re.compile(r'((как|подобно тому как|ровно тому как) .+, .+)|(,\s*как .+)|((подобно тому|ровно тому,\s*как) .+)|((как будто|будто|словно|точно) .+, .+)|(.+, (как будто|будто|словно|точно) .+)', flags=re.IGNORECASE)

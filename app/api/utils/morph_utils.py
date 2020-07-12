@@ -7,7 +7,7 @@ from nltk.tokenize import word_tokenize
 
 from app.api.rules.rules import SENTENCES_SPLIT_REGEX, ADDITIONAL_ABBREVIATIONS, SENTENCES_SPLIT_ADD_REGEX
 
-PUNCTUATION = ' "#$%&()*+.!?«»,\'-/:;<=>@[]^_`{|}~'
+PUNCTUATION = ' "#$%&()*+.!?«»,\'-/:;<=>@[]^_`{|}~—'
 MORPH_ANALYZER = pymorphy2.MorphAnalyzer()
 TAG = MORPH_ANALYZER.TagClass
 

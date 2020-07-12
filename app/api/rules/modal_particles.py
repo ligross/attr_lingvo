@@ -1,4 +1,4 @@
-import re
+import regex as re
 
 MODAL_PARTICLES_LIST = (
     'что за',
@@ -45,4 +45,4 @@ MODAL_PARTICLES_LIST = (
     'исключительно',
 )
 
-MODAL_PARTICLES_REGEX = re.compile(f'(^|[\s,:-—«»"\'])({"|".join(MODAL_PARTICLES_LIST)})($|[\s,:-—«»"\'])', flags=re.IGNORECASE)
+MODAL_PARTICLES_REGEX = re.compile(f'(^|[\\s,:\-—«»"\'])({"|".join(MODAL_PARTICLES_LIST)})($|[\\s,.:\-—«»"\'])', flags=re.IGNORECASE)

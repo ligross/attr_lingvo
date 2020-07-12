@@ -187,6 +187,18 @@
                     <div class="viewport">
                         <md-list>
                             <md-subheader>Описание тезауруса личности</md-subheader>
+                            <md-list-item :key="attributes.keywords_count.name">
+                                <md-checkbox v-model="attributes.keywords_count.checked"/>
+                                <span class="md-list-item-text">{{ attributes.keywords_count.name }}</span>
+                            </md-list-item>
+                            <md-list-item :key="attributes.bigrams_count.name">
+                                <md-checkbox v-model="attributes.bigrams_count.checked"/>
+                                <span class="md-list-item-text">{{ attributes.bigrams_count.name }}</span>
+                            </md-list-item>
+                            <md-list-item :key="attributes.trigrams_count.name">
+                                <md-checkbox v-model="attributes.trigrams_count.checked"/>
+                                <span class="md-list-item-text">{{ attributes.trigrams_count.name }}</span>
+                            </md-list-item>
                             <md-list-item :key="attributes.dichotomy_pronouns_count.name">
                                 <md-checkbox v-model="attributes.dichotomy_pronouns_count.checked"/>
                                 <span class="md-list-item-text">{{ attributes.dichotomy_pronouns_count.name }}</span>
@@ -246,8 +258,19 @@
                                       md-fixed-header
                                       md-card>
                                 <md-table-toolbar>
-                                    <div class="md-toolbar-section-start">
-                                        <h1 class="md-title">Корреляция: {{results.correlation}}</h1>
+                                    <div class="md-toolbar-section-end" v-if="results.keywords_correlation">
+                                         <h1 class="md-title">Корреляция: {{results.correlation}}</h1>
+                                        <md-list>
+                                            <md-list-item>
+                                            Корреляция по ключевым словам: {{results.keywords_correlation}}
+                                            </md-list-item>
+                                            <md-list-item>
+                                            Корреляция по биграммам: {{results.bigrams_correlation}}
+                                            </md-list-item>
+                                            <md-list-item>
+                                                Корреляция по триграммам: {{results.trigrams_correlation}}
+                                            </md-list-item>
+                                        </md-list>
                                     </div>
                                 </md-table-toolbar>
 
@@ -282,10 +305,12 @@
                                         item.second_text['value'] }}
                                     </md-table-cell>
                                     <md-table-cell md-label="Просмотр">
-                                        <md-icon v-if="item.first_text.debug && item.first_text.debug.length > 0">
+                                        <md-icon
+                                                v-if="(item.first_text.debug && item.first_text.debug.length > 0) || (item.second_text.debug && item.second_text.debug.length > 0)">
                                             visibility
                                         </md-icon>
-                                        <md-icon v-if="!item.first_text.debug || item.first_text.debug.length === 0">
+                                        <md-icon
+                                                v-if="(!item.first_text.debug || item.first_text.debug.length === 0) && (!item.second_text.debug || item.second_text.debug.length === 0)">
                                             visibility_off
                                         </md-icon>
                                     </md-table-cell>
@@ -361,10 +386,16 @@ export default {
       'modal_particles_count': {name: 'Модальные частицы', checked: true},
       'interjections_count': {name: 'Междометия', checked: true},
       'modal_postfix_count': {name: 'Наличие/отсутствие модального постфикса «-то»', checked: true},
-      'intensifiers_count': {name: 'Предпочтительные слова-интенсификаторы', checked: true}
+      'intensifiers_count': {name: 'Предпочтительные слова-интенсификаторы', checked: true},
+      'keywords_count': {name: 'Ключевые слова', checked: true},
+      'bigrams_count': {name: 'Наиболее частотные биграммы', checked: true},
+      'trigrams_count': {name: 'Наиболее частотные триграммы', checked: true}
     },
     results: {
       'correlation': null,
+      'keywords_correlation': null,
+      'bigrams_correlation': null,
+      'trigrams_correlation': null,
       'attributes': [],
       'extended_attributes': []
     }

@@ -3,6 +3,7 @@ nltk = "*"
 pymorphy2 = "*"
 requests = "*"
 pyaspeller = "*"
+regex
 
 pytest = "*"
 bumpversion = "*"

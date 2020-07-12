@@ -1,16 +1,18 @@
 from collections import OrderedDict
 
-from pyaspeller import YandexSpeller
+import nltk
 from flask import current_app
+from pyaspeller import YandexSpeller
 
-from app.api.rules.intro_words import INTRO_WORDS_REGEXP
 from app.api.rules.intensifiers import INTENSIFIERS_REGEX
-from app.api.rules.modal_particles import MODAL_PARTICLES_REGEX
 from app.api.rules.interjections import INTERJECTIONS_REGEXP
+from app.api.rules.intro_words import INTRO_WORDS_REGEXP
+from app.api.rules.modal_particles import MODAL_PARTICLES_REGEX
 from app.api.rules.rules import *
+from app.api.utils.display_utils import highlight_match
 from app.api.utils.morph_utils import parse_sentence_morph, MorphRegexConverter, ExtendedMorphRegexConverter, \
     parse_word_morph, tokenize_sentences, tokenize_corp_sentences
-from app.api.utils.display_utils import highlight_match
+from app.api.utils.ngrams import log_likelihood, create_bigrams, create_trigrams
 
 NAN_ELEMENT = 'N/A'
 VOWELS = 'ауоыиэяюёе'
@@ -246,7 +248,8 @@ class Text:
             pos_matches = COMPARATIVES_REGEX_POS.findall(converter.convert(sentence=parsed_sentence))
             matches = COMPARATIVES_REGEX.findall(sentence)
             comparatives_count += len(pos_matches) + len(matches)
-            debug.append(sentence)
+            if pos_matches or matches:
+                debug.append(sentence)
         self.extended_results['comparatives_count'] = {'value': comparatives_count,
                                                        'description': 'Целевые, выделительные и сравнительные обороты',
                                                        'debug': debug}
@@ -414,7 +417,7 @@ class Text:
         modal_particles_count = 0
         debug = []
         for sentence in self.sentences:
-            matches = list(MODAL_PARTICLES_REGEX.finditer(sentence))
+            matches = list(MODAL_PARTICLES_REGEX.finditer(sentence, overlapped=True))
             if matches:
                 modal_particles_count += len(matches)
                 debug.append(highlight_match(sentence, matches))
@@ -502,6 +505,39 @@ class Text:
                                                        'description': 'Предпочтительные слова-интенсификаторы',
                                                        'debug': debug}
         return (intensifiers_count / self.total_words) * IPM_MULTIPLIER
+
+    def keywords_count(self):
+        words_freq = nltk.FreqDist(
+            (word[1].normal_form for sent in self.morph_parsed_sentences_wo_punkt for word in sent))
+        keywords = {}
+        for word in words_freq:
+            ll_score = log_likelihood(word, words_freq[word], self.total_words)
+            if ll_score >= 50:
+                keywords[word] = ll_score
+        self.extended_results['keywords_count'] = {'value': len(keywords),
+                                                   'description': 'Ключевые слова',
+                                                   'debug': list(map(lambda x: f'{x[0]} - {x[1]}', keywords.items()))}
+        return keywords
+
+    def bigrams_count(self):
+        bigrams = create_bigrams(self.morph_parsed_sentences_wo_punkt)
+        bigrams = {f'{bigram[0]} {bigram[1]}': round((value / self.total_words) * IPM_MULTIPLIER, 4) for
+                   bigram, value in bigrams}
+        self.extended_results['bigrams_count'] = {'value': len(bigrams),
+                                                  'description': 'Наиболее частотные биграммы',
+                                                  'debug': list(map(lambda x: f'{x[0]} - {x[1]}', bigrams.items()))}
+        return bigrams
+
+    def trigrams_count(self):
+        trigrams = create_trigrams(self.morph_parsed_sentences_wo_punkt)
+        trigrams = {
+            f'{trigram[0]} {trigram[1]} {trigram[2]}': round((value / self.total_words) * IPM_MULTIPLIER, 4)
+            for trigram, value
+            in trigrams}
+        self.extended_results['trigrams_count'] = {'value': len(trigrams),
+                                                   'description': 'Наиболее частотные триграммы',
+                                                   'debug': list(map(lambda x: f'{x[0]} - {x[1]}', trigrams.items()))}
+        return trigrams
 
     def calculate_results(self):
         if 'flesch_kincaid_index' in self.attributes.keys():
@@ -600,4 +636,10 @@ class Text:
             self.results['intensifiers_count'] = {
                 'name': self.attributes['intensifiers_count']['name'],
                 'result': self.intensifiers_count()}
-        return self.results, self.extended_results
+
+        # correlation-based parameters
+        keywords = self.keywords_count() if 'keywords_count' in self.attributes.keys() else {}
+        bigrams = self.bigrams_count() if 'bigrams_count' in self.attributes.keys() else {}
+        trigrams = self.trigrams_count() if 'trigrams_count' in self.attributes.keys() else {}
+
+        return self.results, self.extended_results, keywords, bigrams, trigrams
