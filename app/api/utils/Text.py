@@ -10,7 +10,7 @@ from app.api.rules.intro_words import INTRO_WORDS_REGEXP
 from app.api.rules.modal_particles import MODAL_PARTICLES_REGEX
 from app.api.rules.rules import *
 from app.api.utils.display_utils import highlight_match
-from app.api.utils.morph_utils import parse_sentence_morph, MorphRegexConverter, ExtendedMorphRegexConverter, \
+from app.api.utils.morph_utils import parse_sentence_morph, MorphRegexConverter, match_morph, \
     parse_word_morph, tokenize_sentences, tokenize_corp_sentences
 from app.api.utils.ngrams import log_likelihood, create_bigrams, create_trigrams
 
@@ -39,6 +39,8 @@ class Text:
         self.morph_parsed_sentences_wo_punkt = self.__remove_punkt()
         self.total_words = self.__count_total_words()
         self.total_syllables, self.total_complex_words = self.__count_total_syllables()
+
+        self.debug_available = self.total_words <= 30000
 
         self.total_nouns = 0
         self.total_pronouns = 0
@@ -202,12 +204,18 @@ class Text:
 
     def get_errors(self):
         try:
-            errors = list(filter(lambda x: x['code'] in (1, 3), SPELLER.spell(self.text)))
-            current_app.logger.info(f'Found errors: {errors}')
-            self.extended_results['errors'] = {'value': len(errors),
+            errors = []
+            errors_count = 0
+            for i in range(0, len(self.sentences), 5000):
+                error = list(filter(lambda x: x['code'] in (1, 3), SPELLER.spell(' '.join(self.sentences[i: i + 5000]))))
+                errors_count += len(error)
+                if self.debug_available:
+                    errors.extend(error)
+            current_app.logger.info(f'Found errors: {errors if self.debug_available else errors_count}')
+            self.extended_results['errors'] = {'value': errors_count,
                                                'description': 'Количество орфографических ошибок',
-                                               'debug': errors}
-            return (len(errors) / self.total_words) * IPM_MULTIPLIER
+                                               'debug': errors if self.debug_available else None}
+            return (errors_count / self.total_words) * IPM_MULTIPLIER
         except Exception as ex:
             current_app.logger.error(f'Exceptions trying to get/parse errors: {ex}')
             return NAN_ELEMENT
@@ -221,7 +229,8 @@ class Text:
             matches = UNIFORM_ROWS_REGEX.findall(converter.convert(sentence=parsed_sentence))
             if matches:
                 uniform_rows_count += len(matches)
-                debug.append(sentence)
+                if self.debug_available:
+                    debug.append(sentence)
         self.extended_results['uniform_rows_count'] = {'value': uniform_rows_count,
                                                        'description': 'Предложения с однородными рядами',
                                                        'debug': debug}
@@ -234,7 +243,8 @@ class Text:
             matches = list(INTRO_WORDS_REGEXP.finditer(sentence))
             if matches:
                 introductory_words_count += len(matches)
-                debug.append(highlight_match(sentence, matches))
+                if self.debug_available:
+                    debug.append(highlight_match(sentence, matches))
         self.extended_results['introductory_words_count'] = {'value': introductory_words_count,
                                                              'description': 'Вводные слова и конструкции',
                                                              'debug': debug}
@@ -248,7 +258,7 @@ class Text:
             pos_matches = COMPARATIVES_REGEX_POS.findall(converter.convert(sentence=parsed_sentence))
             matches = COMPARATIVES_REGEX.findall(sentence)
             comparatives_count += len(pos_matches) + len(matches)
-            if pos_matches or matches:
+            if (pos_matches or matches) and self.debug_available:
                 debug.append(sentence)
         self.extended_results['comparatives_count'] = {'value': comparatives_count,
                                                        'description': 'Целевые, выделительные и сравнительные обороты',
@@ -264,7 +274,8 @@ class Text:
             matches = SYNTAX_SPLICES_REGEX.findall(sentence)
             if pos_matches or matches:
                 syntax_splices_count += len(pos_matches) + len(matches)
-                debug.append(sentence)
+                if self.debug_available:
+                    debug.append(sentence)
         self.extended_results['syntax_splices_count'] = {'value': syntax_splices_count,
                                                          'description': 'Синтаксические сращения',
                                                          'debug': debug}
@@ -277,7 +288,8 @@ class Text:
             matches = list(COMPARATIVE_CLAUSES_REGEX.finditer(sentence))
             if matches:
                 comparative_clauses_count += len(matches)
-                debug.append(highlight_match(sentence, matches))
+                if self.debug_available:
+                    debug.append(highlight_match(sentence, matches))
         self.extended_results['comparative_clauses_count'] = {'value': comparative_clauses_count,
                                                               'description': 'Сравнительные придаточные',
                                                               'debug': debug}
@@ -290,7 +302,8 @@ class Text:
             matches = list(EPINTHETIC_CONSTRUCTIONS_REGEX.finditer(sentence))
             if matches:
                 epenthetic_constructions_count += len(matches)
-                debug.append(highlight_match(sentence, matches))
+                if self.debug_available:
+                    debug.append(highlight_match(sentence, matches))
         self.extended_results['epenthetic_constructions_count'] = {'value': epenthetic_constructions_count,
                                                                    'description': 'Вставные конструкции',
                                                                    'debug': debug}
@@ -303,7 +316,8 @@ class Text:
             matches = list(COLLATION_CLAUSES_REGEX.finditer(sentence))
             if matches:
                 collation_clauses_count += len(matches)
-                debug.append(highlight_match(sentence, matches))
+                if self.debug_available:
+                    debug.append(highlight_match(sentence, matches))
         self.extended_results['collation_clauses_count'] = {'value': collation_clauses_count,
                                                             'description': 'Сопоставительные придаточные',
                                                             'debug': debug}
@@ -316,7 +330,8 @@ class Text:
             matches = list(COMPLEX_SYNTAX_REGEX.finditer(sentence))
             if matches:
                 complex_syntax_constructs_count += len(matches)
-                debug.append(highlight_match(sentence, matches))
+                if self.debug_available:
+                    debug.append(highlight_match(sentence, matches))
         self.extended_results['complex_syntax_constructs_count'] = {'value': complex_syntax_constructs_count,
                                                                     'description': 'Сложные синтаксические конструкции',
                                                                     'debug': debug}
@@ -324,28 +339,30 @@ class Text:
 
     def single_verb_count(self):
         single_verb_count = 0
-        converter = ExtendedMorphRegexConverter(patterns=[{'pos': ('VERB',),
-                                                           'rename_to': 'VERB',
-                                                           'mood': ('indc',),
-                                                           'tense': ('pres', 'futr'),
-                                                           'number': ('plur', 'sing'),
-                                                           'person': ('1p', '2p'),
-                                                           },
-                                                          {
-                                                              'pos': ('NOUN', 'NPRO'),
-                                                              'number': ('plur', 'sing'),
-                                                              'case': ('nomn',),
-                                                              'rename_to': 'SUBJ'
-                                                          },
-                                                          {
-
-                                                          }])
         debug = []
-        for parsed_sentence, sentence in zip(self.morph_parsed_sentences, self.sentences):
-            matches = SYNTAX_SPLICES_REGEX_POS.findall(converter.convert(sentence=parsed_sentence))
-            if matches:
-                single_verb_count += len(matches)
-                debug.append(sentence)
+        for parsed_sentence, sentence in zip(self.morph_parsed_sentences_wo_punkt, self.sentences):
+            is_single_verb = False
+            for i, word in enumerate(parsed_sentence):
+                for tags in SINGLE_VERB_PREDICATES:
+                    match = match_morph(word[1], SINGLE_VERB_PREDICATES[tags])
+                    if match:
+                        predicate_type = tags
+                        predicate = (word[i - 1] if i > 0 else None, word[1])
+                        has_subject = False
+                        if predicate_type in ('first_case', 'second_case', 'third_case', 'sixth_case'):
+                            subject_keys = ('first_case', 'second_case', 'third_case', 'fourth_case', 'fifth_case')
+                            subject_rules = filter(lambda r: r in subject_keys, SINGLE_VERB_SUBJECTS[tags])
+                            has_subject = next((True for word in parsed_sentence
+                                                    for tags, b_words in subject_rules
+                                                    if match_morph(word[1], SINGLE_VERB_SUBJECTS[tags]) and predicate[0] in b_words if b_words), None)
+                        if has_subject:
+                            single_verb_count += 1
+                            is_single_verb = True
+                            break
+                if is_single_verb and self.debug_available:
+                    debug.append(sentence)
+                    break
+
         self.extended_results['single_verb_count'] = {'value': single_verb_count,
                                                       'description': 'Глагольные односоставные предложения',
                                                       'debug': debug}
@@ -359,7 +376,8 @@ class Text:
             matches = APPEAL_REGEX.findall(converter.convert(sentence=parsed_sentence))
             if matches:
                 appeal_count += len(matches)
-                debug.append(sentence)
+                if self.debug_available:
+                    debug.append(sentence)
         self.extended_results['appeal_count'] = {'value': appeal_count,
                                                  'description': 'Обращения',
                                                  'debug': debug}
@@ -378,9 +396,9 @@ class Text:
                 elif word[1].normal_form in OURS_PRONOUNS:
                     ours_found = True
                     dichotomy_ours_count += 1
-            if ours_found:
+            if ours_found and self.debug_available:
                 ours_debug.append(sentence)
-            if theirs_found:
+            if theirs_found and self.debug_available:
                 theirs_debug.append(sentence)
         self.extended_results['dichotomy_ours_count'] = {'value': dichotomy_ours_count,
                                                          'description': 'Местоимения "я, мы"-группы',
@@ -407,7 +425,8 @@ class Text:
                     matches.append(raw_match)
             if matches:
                 complex_words_count += len(matches)
-                debug.append(highlight_match(sentence, matches))
+                if self.debug_available:
+                    debug.append(highlight_match(sentence, matches))
         self.extended_results['complex_words_count'] = {'value': complex_words_count,
                                                         'description': 'Сложные слова полуслитного написания',
                                                         'debug': debug}
@@ -420,7 +439,8 @@ class Text:
             matches = list(MODAL_PARTICLES_REGEX.finditer(sentence, overlapped=True))
             if matches:
                 modal_particles_count += len(matches)
-                debug.append(highlight_match(sentence, matches))
+                if self.debug_available:
+                    debug.append(highlight_match(sentence, matches))
         self.extended_results['modal_particles_count'] = {'value': modal_particles_count,
                                                           'description': 'Модальные частицы',
                                                           'debug': debug}
@@ -436,7 +456,8 @@ class Text:
                     sentence[x.start():x.end()].strip()).normal_form not in MODAL_POSTFIX_EXCLUSIONS,
                                       raw_matches))
                 modal_postfix_count += len(matches)
-                debug.append(highlight_match(sentence, matches))
+                if self.debug_available:
+                    debug.append(highlight_match(sentence, matches))
         self.extended_results['modal_postfix_count'] = {'value': modal_postfix_count,
                                                         'description': 'Наличие/отсутствие модального постфикса «-то»',
                                                         'debug': debug}
@@ -449,7 +470,8 @@ class Text:
             matches = list(INTERJECTIONS_REGEXP.finditer(sentence))
             if matches:
                 interjections_count += len(matches)
-                debug.append(highlight_match(sentence, matches))
+                if self.debug_available:
+                    debug.append(highlight_match(sentence, matches))
         self.extended_results['interjections_count'] = {'value': interjections_count,
                                                         'description': 'Междометия',
                                                         'debug': debug}
@@ -500,7 +522,8 @@ class Text:
                 matches.append(raw_match)
             if matches:
                 intensifiers_count += len(matches)
-                debug.append(highlight_match(sentence, matches))
+                if self.debug_available:
+                    debug.append(highlight_match(sentence, matches))
         self.extended_results['intensifiers_count'] = {'value': intensifiers_count,
                                                        'description': 'Предпочтительные слова-интенсификаторы',
                                                        'debug': debug}
@@ -516,7 +539,7 @@ class Text:
                 keywords[word] = ll_score
         self.extended_results['keywords_count'] = {'value': len(keywords),
                                                    'description': 'Ключевые слова',
-                                                   'debug': list(map(lambda x: f'{x[0]} - {x[1]}', keywords.items()))}
+                                                   'debug': list(map(lambda x: f'{x[0]} - {x[1]}', keywords.items())) if self.debug_available else []}
         return keywords
 
     def bigrams_count(self):
@@ -525,7 +548,7 @@ class Text:
                    bigram, value in bigrams}
         self.extended_results['bigrams_count'] = {'value': len(bigrams),
                                                   'description': 'Наиболее частотные биграммы',
-                                                  'debug': list(map(lambda x: f'{x[0]} - {x[1]}', bigrams.items()))}
+                                                  'debug': list(map(lambda x: f'{x[0]} - {x[1]}', bigrams.items())) if self.debug_available else []}
         return bigrams
 
     def trigrams_count(self):
@@ -536,7 +559,7 @@ class Text:
             in trigrams}
         self.extended_results['trigrams_count'] = {'value': len(trigrams),
                                                    'description': 'Наиболее частотные триграммы',
-                                                   'debug': list(map(lambda x: f'{x[0]} - {x[1]}', trigrams.items()))}
+                                                   'debug': list(map(lambda x: f'{x[0]} - {x[1]}', trigrams.items())) if self.debug_available else []}
         return trigrams
 
     def calculate_results(self):
@@ -600,10 +623,10 @@ class Text:
             self.results['complex_syntax_constructs_count'] = {
                 'name': self.attributes['complex_syntax_constructs_count']['name'],
                 'result': self.complex_syntax_constructs_count()}
-        # if 'single_verb_count' in self.attributes.keys():
-        #    self.results['single_verb_count'] = {
-        #        'name': self.attributes['single_verb_count']['name'],
-        #        'result': self.single_verb_count()}
+       #if 'single_verb_count' in self.attributes.keys():
+       #     self.results['single_verb_count'] = {
+       #         'name': self.attributes['single_verb_count']['name'],
+       #         'result': self.single_verb_count()}
         if 'appeal_count' in self.attributes.keys():
             self.results['appeal_count'] = {
                 'name': self.attributes['appeal_count']['name'],

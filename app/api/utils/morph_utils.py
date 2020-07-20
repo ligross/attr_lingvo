@@ -143,3 +143,10 @@ def match_tags(sentence, tags):
                 if set(tag) in parsed_word.tag:
                     matches += 1
     return matches
+
+
+def match_morph(word, tags):
+    for tag in tags[0]:
+        if not any((t in word.tag for t in tags[0][tag])):
+            return False
+    return True

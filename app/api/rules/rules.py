@@ -64,14 +64,20 @@ VERB_FORMS = ('VERB', 'INFN', 'PRTF', 'PRTS', 'GRND')
 
 UNIFORM_ROWS_REGEX = re.compile('|'.join(UNIFORM_ROWS), flags=re.IGNORECASE)
 
-COMPARATIVES_REGEX_POS = re.compile('(^|[\\s,:\-—«»"\'])(с целью|из расч(е|ё)та) INFN($|[\\s,.:\-—«»"\'])', flags=re.IGNORECASE)
-COMPARATIVES_REGEX = re.compile('(^|[\\s,:\-—«»"\'])(кроме|помимо|включая|наряду с)|(как|будто)($|[\\s,.:\-—«»"\'])', flags=re.IGNORECASE)
+COMPARATIVES_REGEX_POS = re.compile('(^|[\\s,:\-—«»"\'])(с целью|из расч(е|ё)та) INFN($|[\\s,.:\-—«»"\'])',
+                                    flags=re.IGNORECASE)
+COMPARATIVES_REGEX = re.compile('(^|[\\s,:\-—«»"\'])(кроме|помимо|включая|наряду с)|(как|будто)($|[\\s,.:\-—«»"\'])',
+                                flags=re.IGNORECASE)
 
-SYNTAX_SPLICES_REGEX_POS = re.compile('(^|[\\s,:\-—«»"\'])(VERB (да и|да) VERB)($|[\\s,.:\-—«»"\'])', flags=re.IGNORECASE)
-SYNTAX_SPLICES_REGEX = re.compile(r'(^|[\\s,:\-—«»"\'])(что было,\s*то было|что было,\s*то и есть|что было,\s*то есть|что есть,\s*то есть|что есть,\s*то и есть|что есть,\s*то и будет|что есть,\s*то будет)($|[\\s,.:\-—«»"\'])',
-                                  flags=re.IGNORECASE)
+SYNTAX_SPLICES_REGEX_POS = re.compile('(^|[\\s,:\-—«»"\'])(VERB (да и|да) VERB)($|[\\s,.:\-—«»"\'])',
+                                      flags=re.IGNORECASE)
+SYNTAX_SPLICES_REGEX = re.compile(
+    r'(^|[\\s,:\-—«»"\'])(что было,\s*то было|что было,\s*то и есть|что было,\s*то есть|что есть,\s*то есть|что есть,\s*то и есть|что есть,\s*то и будет|что есть,\s*то будет)($|[\\s,.:\-—«»"\'])',
+    flags=re.IGNORECASE)
 
-COMPARATIVE_CLAUSES_REGEX = re.compile(r'((как|подобно тому как|ровно тому как) .+, .+)|(,\s*как .+)|((подобно тому|ровно тому,\s*как) .+)|((как будто|будто|словно|точно) .+, .+)|(.+, (как будто|будто|словно|точно) .+)', flags=re.IGNORECASE)
+COMPARATIVE_CLAUSES_REGEX = re.compile(
+    r'((как|подобно тому как|ровно тому как) .+, .+)|(,\s*как .+)|((подобно тому|ровно тому,\s*как) .+)|((как будто|будто|словно|точно) .+, .+)|(.+, (как будто|будто|словно|точно) .+)',
+    flags=re.IGNORECASE)
 
 EPINTHETIC_CONSTRUCTIONS_REGEX = re.compile(r'(–.+–)|(\(.+\))|(-.+-)', flags=re.IGNORECASE)
 
@@ -89,3 +95,67 @@ MODAL_POSTFIX_REGEX = re.compile(r'[a-я]+(\-|\—)то(\s+|!|\?|.|$)', flags=re
 
 SENTENCES_SPLIT_REGEX = re.compile(r'\n+\s*\n+')
 SENTENCES_SPLIT_ADD_REGEX = re.compile(r'(\n+)([А-Я]{1})([^А-Я]{1})')
+
+SINGLE_VERB_PREDICATES = {'first_case': ({'pos': ('VERB',),
+                                         'mood': ('indc',),
+                                         'tense': ('pres', 'futr'),
+                                         'numbers': ('plur', 'sing'),
+                                         'person': ('1per', '2per'),
+                                         }, None),
+                          'second_case': ({'pos': ('VERB',),
+                                          'mood': ('impr',),
+                                          'number': ('plur', 'sing'), }, None),
+                          'third_case': ({'pos': ('VERB',),
+                                         'person': ('3per',),
+                                         'number': ('plur', 'sing'),
+                                         'mood': ('indc',),
+                                         'tense': ('pres', 'futr'),
+                                         }, None),
+                          'fourth_case': ({'pos': ('VERB',),
+                                          'tense': ('past',),
+                                          'number': ('sing',),
+                                          'gender': ('neut',)
+                                          }, None),
+                          'fifth_case': ({'pos': ('VERB',),
+                                         'person': ('3per',),
+                                         'number': ('sing',),
+                                         'tense': ('pres',),
+                                         }, None),
+                          'sixth_case': ({
+                              'pos': ('PRTS',),
+                              'gender': ('neut',),
+                              'voice': ('pssv',)
+                          }, None),
+                          'seventh_case': ({
+                              'pos': ('INFN',),
+                          }, None)
+                          }
+
+SINGLE_VERB_SUBJECTS = {'first_case': ({'pos': ('NOUN', 'NPRO'),
+                                       'number': ('plur', 'sing'),
+                                       'case': ('nomn',)
+                                       }, None),
+                        'second_case': ({
+                            'pos': ('NOUN',),
+                            'number': ('plur', 'sing'),
+                            'case': ('nomn',)
+                        }, None),
+                        'third_case': ({
+                            'pos': ('NOUN',),
+                            'number': ('plur', 'sing'),
+                            'case': ('gen1', 'gen2')
+                        }, ('много', 'мало', 'несколько')),
+                        'fourth_case': ({'pos': ('NOUN', 'NPRO'),
+                                        'number': ('plur', 'sing'),
+                                        'case': ('gen1', 'gen2')
+                                        }, 'у'),
+                        'fifth_case': ({'pos': ('NOUN', 'NPRO'),
+                                       'number': ('plur', 'sing'),
+                                       'case': ('datv',)
+                                       }, None),
+                        'sixth_case': ({
+                            'pos': ('VERB',),
+                            'number': ('plur', 'sing'),
+                            'tense': ('pres', 'futr', 'past'),
+                        }, None)
+                        }
