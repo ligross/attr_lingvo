@@ -146,7 +146,10 @@ def match_tags(sentence, tags):
 
 
 def match_morph(word, tags):
-    for tag in tags[0]:
-        if not any((t in word.tag for t in tags[0][tag])):
-            return False
-    return True
+    try:
+        for tag in tags[0]:
+            if not any((t in word.tag for t in tags[0][tag])):
+                return False
+        return True
+    except Exception as e:
+        pass

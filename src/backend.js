@@ -2,7 +2,7 @@ import axios from 'axios'
 
 let $axios = axios.create({
   baseURL: '/api/',
-  timeout: 600000,
+  timeout: 900000,
   headers: {'Content-Type': 'application/json'}
 })
 
@@ -25,6 +25,10 @@ export default {
 
   getResults (payload) {
     return $axios.post(`results/calculate`, payload)
-      .then(response => response.data)
+      .then(response => {
+        console.log(response.data)
+        return response.data
+      }
+      )
   }
 }

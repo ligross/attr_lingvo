@@ -252,28 +252,49 @@
                 </md-empty-state>
 
                 <template v-if="results.attributes.length !== 0">
+                    <md-button class="md-raised md-primary" @click="csvExport">Выгрузить</md-button>
+                    <md-button class="md-raised md-primary" @click="setDone('third_step', 'results_step')">Пересчитать
+                    </md-button>
                     <md-tabs class="md-primary" style="padding: 20px">
                         <md-tab id="results" md-label="Результаты">
                             <md-table class="content" :value="results.attributes" md-sort="id" md-sort-order="asc"
                                       md-fixed-header
                                       md-card>
                                 <md-table-toolbar>
-                                    <div class="md-toolbar-section-end" v-if="results.keywords_correlation">
-                                         <h1 class="md-title">Корреляция: {{results.correlation}}</h1>
+                                    <div class="md-toolbar-section-end" v-if="results.attributes">
                                         <md-list>
-                                            <md-list-item>
-                                            Корреляция по ключевым словам: {{results.keywords_correlation}}
+                                            <md-list-item v-if="results.pearson_correlation !== null">
+                                                Коэффициент корреляции Пирсона: {{results.pearson_correlation}}
                                             </md-list-item>
-                                            <md-list-item>
-                                            Корреляция по биграммам: {{results.bigrams_correlation}}
+                                            <md-list-item v-if="results.linear_regression !== null">
+                                                Линейная регрессия:
+                                                p-value - {{results.linear_regression.pvalue}},
+                                                r-value - {{results.linear_regression.rvalue}},
+                                                stderr - {{results.linear_regression.stderr}}
                                             </md-list-item>
-                                            <md-list-item>
+                                            <md-list-item v-if="results.student_correlation !== null">
+                                                t-критерий Стьюдента:
+                                                p-value - {{results.student_correlation.pvalue}},
+                                                statistic - {{results.student_correlation.statistic}}
+                                            </md-list-item>
+                                        </md-list>
+                                        <md-list>
+                                            <md-list-item v-if="results.keywords_correlation">
+                                                Корреляция по ключевым словам: {{results.keywords_correlation}}
+                                            </md-list-item>
+                                            <md-list-item v-if="results.intensifiers_correlation">
+                                                Корреляция по словам-интенсификаторам:
+                                                {{results.intensifiers_correlation}}
+                                            </md-list-item>
+                                            <md-list-item v-if="results.bigrams_correlation">
+                                                Корреляция по биграммам: {{results.bigrams_correlation}}
+                                            </md-list-item>
+                                            <md-list-item v-if="results.trigrams_correlation">
                                                 Корреляция по триграммам: {{results.trigrams_correlation}}
                                             </md-list-item>
                                         </md-list>
                                     </div>
                                 </md-table-toolbar>
-
                                 <md-table-row slot="md-table-row" slot-scope="{ item }">
                                     <md-table-cell md-label="ID" md-sort-by="id" md-numeric>{{ item.id }}
                                     </md-table-cell>
@@ -318,9 +339,6 @@
                             </md-table>
                         </md-tab>
                     </md-tabs>
-
-                    <md-button class="md-raised md-primary" @click="setDone('third_step', 'results_step')">Продолжить
-                    </md-button>
                 </template>
             </md-step>
         </md-steppers>
@@ -370,7 +388,7 @@ export default {
       'ac_coefficient': {name: 'Коэффициент активности (Ас)', checked: true},
       'din_coefficient': {name: 'Коэффициент динамизма (Din)', checked: true},
       'con_coefficient': {name: 'Коэффициент связности текста (Con)', checked: true},
-      'errors': {name: 'Количество орфографических ошибок', checked: true},
+      'errors': {name: 'Количество несловарных слов', checked: true},
       'uniform_rows_count': {name: 'Предложения с однородными рядами', checked: true},
       'introductory_words_count': {name: 'Вводные слова и конструкции', checked: true},
       'comparatives_count': {name: 'Целевые, выделительные и сравнительные обороты', checked: true},
@@ -392,10 +410,14 @@ export default {
       'trigrams_count': {name: 'Наиболее частотные триграммы', checked: true}
     },
     results: {
-      'correlation': null,
+      'pearson_correlation': null,
+      'linear_regression': null,
+      'jaccard_correlation': null,
+      'student_correlation': null,
       'keywords_correlation': null,
       'bigrams_correlation': null,
       'trigrams_correlation': null,
+      'intensifiers_correlation': null,
       'attributes': [],
       'extended_attributes': []
     }
@@ -410,12 +432,53 @@ export default {
         this.getResults()
       }
     },
+    csvExport () {
+      let csvContent = 'data:text/csv;charset=utf-8,'
+
+      csvContent += [
+        ['Коэффициент корреляции Пирсона', this.results.pearson_correlation].join(';'),
+        '',
+        'Линейная регрессия',
+        ['p-value', this.results.linear_regression.pvalue].join(';'),
+        ['r-value', this.results.linear_regression.rvalue].join(';'),
+        ['stderr', this.results.linear_regression.stderr].join(';'),
+        ['slope', this.results.linear_regression.slope].join(';'),
+        ['intercept', this.results.linear_regression.intercept].join(';'),
+        '',
+        't-критерий Стьюдента',
+        ['p-value', this.results.student_correlation.pvalue].join(';'),
+        ['statistic', this.results.student_correlation.statistic].join(';'),
+        '',
+        ['Корреляция по ключевым словам', this.results.keywords_correlation || 'N/A'].join(';'),
+        ['Корреляция по словам-интенсификаторам', this.results.intensifiers_correlation || 'N/A'].join(';'),
+        ['Корреляция по биграммам', this.results.bigrams_correlation || 'N/A'].join(';'),
+        ['Корреляция по триграммам', this.results.trigrams_correlation || 'N/A'].join(';'),
+        '',
+        'Относительные параметры',
+        ['Номер параметра', 'Название параметра', 'Текст 1', 'Текст 2'].join(';'),
+        ...this.results.attributes.map(item => Object.values(item).join(';')),
+        '',
+        'Абсолютные параметры',
+        ['Номер параметра', 'Название параметра', 'Текст 1', 'Текст 2'].join(';'),
+        ...this.results.extended_attributes.map(item => {
+          let keys = Object.keys(item).filter(k => k !== 'name')
+          return keys.map(k => (k === 'first_text' || k === 'second_text') ? item[k].value : item[k]).join(';')
+        }
+        )
+      ]
+        .join('\n')
+        .replace(/(^\[)|(\]$)/gm, '')
+      const data = encodeURI(csvContent)
+      const link = document.createElement('a')
+      link.setAttribute('href', data)
+      link.setAttribute('download', 'export.csv')
+      link.click()
+    },
     noAttributesSelected () {
       return Object.keys(this.attributes).filter(key => this.attributes[key]['checked'] === true).length === 0
     },
     onSelect (item) {
-      console.log(item)
-      if (item !== undefined && (item.first_text.debug || item.second_text.debug)) {
+      if (item !== undefined && ((item.first_text.debug && item.first_text.debug.length > 0) || (item.second_text.debug && item.second_text.debug.length > 0))) {
         this.selected = item || this.selected
         this.showDialog = true
       }
@@ -424,8 +487,15 @@ export default {
       this.error = ''
       this.is_processing = true
       this.results = {
-        'correlation': null,
+        'pearson_correlation': null,
+        'linear_regression': null,
+        'jaccard_correlation': null,
+        'student_correlation': null,
         'attributes': [],
+        'keywords_correlation': null,
+        'bigrams_correlation': null,
+        'trigrams_correlation': null,
+        'intensifiers_correlation': null,
         'extended_attributes': []
       }
       let payload = {
@@ -440,7 +510,6 @@ export default {
           this.results = responseData['results']
           console.log(this.results)
           this.is_processing = false
-          console.log(this.results)
         }).catch(error => {
           this.is_processing = false
           this.error = error.message

@@ -98,4 +98,4 @@ INTENSIFIERS_LIST = (
     'экая'
 )
 
-INTENSIFIERS_REGEX = re.compile(f'(\w+)?(\\s+|,\\s*|^)({"|".join(INTENSIFIERS_LIST)})(,\\s*|\\s+|\.|!|\?|S)?(\w+)?', flags=re.IGNORECASE)
+INTENSIFIERS_REGEX = re.compile(f'(\w+)?(\\s+|,\\s*|^)({"|".join(INTENSIFIERS_LIST)})(,\\s*|\\s+|\.|!|\?|S)+(\w+)?', flags=re.IGNORECASE)

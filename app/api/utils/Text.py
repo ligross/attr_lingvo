@@ -66,7 +66,7 @@ class Text:
         morph_parsed_sentences_wo_punkt = []
         for sentence in self.morph_parsed_sentences:
             morph_parsed_sentences_wo_punkt.append(
-                [(word, parsed_word) for word, parsed_word in sentence if parsed_word])
+                [(word, parsed_word) for word, parsed_word in sentence if parsed_word and parsed_word.tag.POS])
         return morph_parsed_sentences_wo_punkt
 
     def __create_extended_results(self):
@@ -151,7 +151,10 @@ class Text:
         # array of average word lengths for each sentence
         avg_word_len = []
         for sentence in self.morph_parsed_sentences_wo_punkt:
-            avg_word_len.append(sum((len(word) for word, parsed_word in sentence)) / len(sentence))
+            try:
+                avg_word_len.append(sum((len(word) for word, parsed_word in sentence)) / len(sentence))
+            except ZeroDivisionError:
+                pass
         return sum(avg_word_len) / len(self.sentences)
 
     def avg_sent_len_in_words(self):
@@ -206,14 +209,15 @@ class Text:
         try:
             errors = []
             errors_count = 0
-            for i in range(0, len(self.sentences), 5000):
-                error = list(filter(lambda x: x['code'] in (1, 3), SPELLER.spell(' '.join(self.sentences[i: i + 5000]))))
+            for i in range(0, len(self.sentences), 2000):
+                error = list(
+                    filter(lambda x: x['code'] in (1, 3), SPELLER.spell(' '.join(self.sentences[i: i + 2000]))))
                 errors_count += len(error)
                 if self.debug_available:
                     errors.extend(error)
             current_app.logger.info(f'Found errors: {errors if self.debug_available else errors_count}')
             self.extended_results['errors'] = {'value': errors_count,
-                                               'description': 'Количество орфографических ошибок',
+                                               'description': 'Количество несловарных слов',
                                                'debug': errors if self.debug_available else None}
             return (errors_count / self.total_words) * IPM_MULTIPLIER
         except Exception as ex:
@@ -343,24 +347,27 @@ class Text:
         for parsed_sentence, sentence in zip(self.morph_parsed_sentences_wo_punkt, self.sentences):
             is_single_verb = False
             for i, word in enumerate(parsed_sentence):
-                for tags in SINGLE_VERB_PREDICATES:
-                    match = match_morph(word[1], SINGLE_VERB_PREDICATES[tags])
+                for predicate_type in SINGLE_VERB_PREDICATES:
+                    match = match_morph(word[1], SINGLE_VERB_PREDICATES[predicate_type])
                     if match:
-                        predicate_type = tags
-                        predicate = (word[i - 1] if i > 0 else None, word[1])
-                        has_subject = False
-                        if predicate_type in ('first_case', 'second_case', 'third_case', 'sixth_case'):
-                            subject_keys = ('first_case', 'second_case', 'third_case', 'fourth_case', 'fifth_case')
-                            subject_rules = filter(lambda r: r in subject_keys, SINGLE_VERB_SUBJECTS[tags])
+                        predicate = (parsed_sentence[i - 1] if i > 0 else None, parsed_sentence[i])
+                        subject_keys = ('first_case', 'second_case', 'third_case', 'fourth_case', 'fifth_case')
+                        subject_rules = list(filter(lambda r: r[0] in subject_keys, SINGLE_VERB_SUBJECTS.items()))
+                        has_subject = next((True for w in parsed_sentence
+                                            for tags, b_words in subject_rules
+                                            if match_morph(w[1], SINGLE_VERB_SUBJECTS[tags]) and (not b_words[1] or predicate[0][1].normal_form in b_words[1])), None)
+                        if predicate_type == 'seventh_case' and not has_subject:
                             has_subject = next((True for word in parsed_sentence
-                                                    for tags, b_words in subject_rules
-                                                    if match_morph(word[1], SINGLE_VERB_SUBJECTS[tags]) and predicate[0] in b_words if b_words), None)
-                        if has_subject:
+                                                if match_morph(word[1], SINGLE_VERB_SUBJECTS['sixth_case'])
+                                                and (not SINGLE_VERB_SUBJECTS['sixth_case'][1] or predicate[0][1].normal_form in SINGLE_VERB_SUBJECTS['sixth_case'][1])),
+                                               None)
+                        if not has_subject:
                             single_verb_count += 1
                             is_single_verb = True
                             break
-                if is_single_verb and self.debug_available:
-                    debug.append(sentence)
+                if is_single_verb:
+                    if self.debug_available:
+                        debug.append(sentence)
                     break
 
         self.extended_results['single_verb_count'] = {'value': single_verb_count,
@@ -420,6 +427,8 @@ class Text:
                 first_word, second_word = raw_match.string[raw_match.start():raw_match.end()].replace('—', '-').split(
                     '-')
                 first_word, second_word = parse_word_morph(first_word), parse_word_morph(second_word)
+                if first_word.tag.POS != 'NOUN' or second_word.tag.POS != 'NOUN':
+                    continue
                 if first_word.tag.case == second_word.tag.case \
                         and first_word.tag.number == second_word.tag.number:
                     matches.append(raw_match)
@@ -478,7 +487,7 @@ class Text:
         return (interjections_count / self.total_words) * IPM_MULTIPLIER
 
     def intensifiers_count(self):
-        intensifiers_count = 0
+        intensifiers = {}
         debug = []
         for sentence in self.sentences:
             raw_matches = list(INTENSIFIERS_REGEX.finditer(sentence))
@@ -519,15 +528,22 @@ class Text:
                 if main_word == 'чуть' and right_word not in ('ли', 'не') and right_word_pos not in ('ADJF', 'ADJS'):
                     continue
 
+                if intensifiers.get(main_word):
+                    intensifiers[main_word] += 1
+                else:
+                    intensifiers[main_word] = 1
                 matches.append(raw_match)
             if matches:
-                intensifiers_count += len(matches)
                 if self.debug_available:
-                    debug.append(highlight_match(sentence, matches))
-        self.extended_results['intensifiers_count'] = {'value': intensifiers_count,
+                    debug.append(highlight_match(sentence, matches, 3))
+        self.extended_results['intensifiers_count'] = {'value': sum(intensifiers.values()),
                                                        'description': 'Предпочтительные слова-интенсификаторы',
                                                        'debug': debug}
-        return (intensifiers_count / self.total_words) * IPM_MULTIPLIER
+        intensifiers_score = {}
+        for word in intensifiers:
+            ll_score = log_likelihood(word, intensifiers[word], self.total_words)
+            intensifiers_score[word] = ll_score
+        return intensifiers_score
 
     def keywords_count(self):
         words_freq = nltk.FreqDist(
@@ -539,7 +555,8 @@ class Text:
                 keywords[word] = ll_score
         self.extended_results['keywords_count'] = {'value': len(keywords),
                                                    'description': 'Ключевые слова',
-                                                   'debug': list(map(lambda x: f'{x[0]} - {x[1]}', keywords.items())) if self.debug_available else []}
+                                                   'debug': list(map(lambda x: f'{x[0]} - {x[1]}',
+                                                                     keywords.items())) if self.debug_available else []}
         return keywords
 
     def bigrams_count(self):
@@ -548,7 +565,8 @@ class Text:
                    bigram, value in bigrams}
         self.extended_results['bigrams_count'] = {'value': len(bigrams),
                                                   'description': 'Наиболее частотные биграммы',
-                                                  'debug': list(map(lambda x: f'{x[0]} - {x[1]}', bigrams.items())) if self.debug_available else []}
+                                                  'debug': list(map(lambda x: f'{x[0]} - {x[1]}',
+                                                                    bigrams.items())) if self.debug_available else []}
         return bigrams
 
     def trigrams_count(self):
@@ -559,7 +577,8 @@ class Text:
             in trigrams}
         self.extended_results['trigrams_count'] = {'value': len(trigrams),
                                                    'description': 'Наиболее частотные триграммы',
-                                                   'debug': list(map(lambda x: f'{x[0]} - {x[1]}', trigrams.items())) if self.debug_available else []}
+                                                   'debug': list(map(lambda x: f'{x[0]} - {x[1]}',
+                                                                     trigrams.items())) if self.debug_available else []}
         return trigrams
 
     def calculate_results(self):
@@ -623,10 +642,10 @@ class Text:
             self.results['complex_syntax_constructs_count'] = {
                 'name': self.attributes['complex_syntax_constructs_count']['name'],
                 'result': self.complex_syntax_constructs_count()}
-       #if 'single_verb_count' in self.attributes.keys():
-       #     self.results['single_verb_count'] = {
-       #         'name': self.attributes['single_verb_count']['name'],
-       #         'result': self.single_verb_count()}
+        if 'single_verb_count' in self.attributes.keys():
+            self.results['single_verb_count'] = {
+                'name': self.attributes['single_verb_count']['name'],
+                'result': self.single_verb_count()}
         if 'appeal_count' in self.attributes.keys():
             self.results['appeal_count'] = {
                 'name': self.attributes['appeal_count']['name'],
@@ -655,14 +674,15 @@ class Text:
             self.results['modal_postfix_count'] = {
                 'name': self.attributes['modal_postfix_count']['name'],
                 'result': self.modal_postfix_count()}
-        if 'intensifiers_count' in self.attributes.keys():
-            self.results['intensifiers_count'] = {
-                'name': self.attributes['intensifiers_count']['name'],
-                'result': self.intensifiers_count()}
+        # if 'intensifiers_count' in self.attributes.keys():
+        #    self.results['intensifiers_count'] = {
+        #        'name': self.attributes['intensifiers_count']['name'],
+        #        'result': self.intensifiers_count()}
 
         # correlation-based parameters
         keywords = self.keywords_count() if 'keywords_count' in self.attributes.keys() else {}
         bigrams = self.bigrams_count() if 'bigrams_count' in self.attributes.keys() else {}
         trigrams = self.trigrams_count() if 'trigrams_count' in self.attributes.keys() else {}
+        intensifiers = self.intensifiers_count() if 'intensifiers_count' in self.attributes.keys() else {}
 
-        return self.results, self.extended_results, keywords, bigrams, trigrams
+        return self.results, self.extended_results, keywords, bigrams, trigrams, intensifiers

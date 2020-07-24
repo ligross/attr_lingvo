@@ -58,6 +58,14 @@ MODAL_POSTFIX_EXCLUSIONS = (
     'какой-то',
     'чей-то',
     'сколько-то',
+    'как-то',
+    'каков-то',
+    'чего-то',
+    'чем-то',
+    'где-то',
+    'куда-то',
+    'откуда-то',
+    'почему-то'
 )
 
 VERB_FORMS = ('VERB', 'INFN', 'PRTF', 'PRTS', 'GRND')
@@ -79,7 +87,7 @@ COMPARATIVE_CLAUSES_REGEX = re.compile(
     r'((как|подобно тому как|ровно тому как) .+, .+)|(,\s*как .+)|((подобно тому|ровно тому,\s*как) .+)|((как будто|будто|словно|точно) .+, .+)|(.+, (как будто|будто|словно|точно) .+)',
     flags=re.IGNORECASE)
 
-EPINTHETIC_CONSTRUCTIONS_REGEX = re.compile(r'(–.+–)|(\(.+\))|(-.+-)', flags=re.IGNORECASE)
+EPINTHETIC_CONSTRUCTIONS_REGEX = re.compile(r'(\s+(-|—|–)\s+.+\s+(-|—|–)\s+)|(\(.+\))', flags=re.IGNORECASE)
 
 COLLATION_CLAUSES_REGEX = re.compile('|'.join(COLLATION_ROWS), flags=re.IGNORECASE)
 
@@ -87,11 +95,13 @@ COMPLEX_SYNTAX_REGEX = re.compile('|'.join(COMPLEX_SYNTAX_ROWS), flags=re.IGNORE
 
 APPEAL_REGEX = re.compile('(?=(, (Name|Patr|Surn), )|(, Name (Patr|Surn), )|(, Name Patr Surn, ))', flags=re.IGNORECASE)
 
-OURS_PRONOUNS, THEIRS_PRONOUNS = ('я', 'мы', 'ты'), ('он', 'она', 'они')
+OURS_PRONOUNS, THEIRS_PRONOUNS = ('я', 'мы', 'ты', 'мой', 'наш', 'твой'),\
+                                 ('он', 'она', 'они', 'её', 'ee', 'его', 'их', 'ваш')
+PRONOUNS_EXCLUSIONS = ('кто', 'что', 'чей', 'какой', 'как', 'каков', 'чего', 'чем', 'где', 'куда', 'откуда')
 
 COMPLEX_WORDS_REGEX = re.compile(r'([a-я]+(-|—)[а-я]+)', flags=re.IGNORECASE)
 
-MODAL_POSTFIX_REGEX = re.compile(r'[a-я]+(\-|\—)то(\s+|!|\?|.|$)', flags=re.IGNORECASE)
+MODAL_POSTFIX_REGEX = re.compile(r'[a-я]+(\-|\—)то(\s+|!|\?|\.|$)', flags=re.IGNORECASE)
 
 SENTENCES_SPLIT_REGEX = re.compile(r'\n+\s*\n+')
 SENTENCES_SPLIT_ADD_REGEX = re.compile(r'(\n+)([А-Я]{1})([^А-Я]{1})')
