@@ -355,11 +355,14 @@ class Text:
                         subject_rules = list(filter(lambda r: r[0] in subject_keys, SINGLE_VERB_SUBJECTS.items()))
                         has_subject = next((True for w in parsed_sentence
                                             for tags, b_words in subject_rules
-                                            if match_morph(w[1], SINGLE_VERB_SUBJECTS[tags]) and (not b_words[1] or predicate[0][1].normal_form in b_words[1])), None)
+                                            if match_morph(w[1], SINGLE_VERB_SUBJECTS[tags]) and (
+                                                        not b_words[1] or predicate[0][1].normal_form in b_words[1])),
+                                           None)
                         if predicate_type == 'seventh_case' and not has_subject:
                             has_subject = next((True for word in parsed_sentence
                                                 if match_morph(word[1], SINGLE_VERB_SUBJECTS['sixth_case'])
-                                                and (not SINGLE_VERB_SUBJECTS['sixth_case'][1] or predicate[0][1].normal_form in SINGLE_VERB_SUBJECTS['sixth_case'][1])),
+                                                and (not SINGLE_VERB_SUBJECTS['sixth_case'][1] or predicate[0][
+                                1].normal_form in SINGLE_VERB_SUBJECTS['sixth_case'][1])),
                                                None)
                         if not has_subject:
                             single_verb_count += 1
@@ -581,6 +584,27 @@ class Text:
                                                                      trigrams.items())) if self.debug_available else []}
         return trigrams
 
+    def standalone_constructions_count(self):
+        standalone_constructions_count = 0
+        debug = []
+        for sentence in self.sentences:
+            match = STANDALONE_CONSTRUCTIONS_REGEX.match(sentence)
+            if match:
+                first_part, second_part = match.groupdict().values()
+                first_part, second_part = parse_sentence_morph(first_part), parse_sentence_morph(second_part)
+                first_part_nouns = [(w[1].tag.case, w[1].tag.number) for w in first_part if w[1] and w[1].tag.POS == 'NOUN']
+                if not first_part_nouns:
+                    continue
+                second_part_nouns = [(w[1].tag.case, w[1].tag.number) for w in second_part if w[1] and w[1].tag.POS == 'NOUN']
+                if set(second_part_nouns) & set(first_part_nouns):
+                    standalone_constructions_count += 1
+                    if self.debug_available:
+                        debug.append(sentence)
+        self.extended_results['standalone_constructions_count'] = {'value': standalone_constructions_count,
+                                                                   'description': 'Предложения с обособленными приложениями',
+                                                                   'debug': debug}
+        return (standalone_constructions_count / self.total_words) * IPM_MULTIPLIER
+
     def calculate_results(self):
         if 'flesch_kincaid_index' in self.attributes.keys():
             self.results['flesch_kincaid_index'] = {'name': self.attributes['flesch_kincaid_index']['name'],
@@ -618,6 +642,10 @@ class Text:
         if 'uniform_rows_count' in self.attributes.keys():
             self.results['uniform_rows_count'] = {'name': self.attributes['uniform_rows_count']['name'],
                                                   'result': self.uniform_rows_count()}
+        if 'standalone_constructions_count' in self.attributes.keys():
+            self.results['standalone_constructions_count'] = {
+                'name': self.attributes['standalone_constructions_count']['name'],
+                'result': self.standalone_constructions_count()}
         if 'introductory_words_count' in self.attributes.keys():
             self.results['introductory_words_count'] = {'name': self.attributes['introductory_words_count']['name'],
                                                         'result': self.introductory_words_count()}

@@ -101,10 +101,12 @@ PRONOUNS_EXCLUSIONS = ('кто', 'что', 'чей', 'какой', 'как', 'к
 
 COMPLEX_WORDS_REGEX = re.compile(r'([a-я]+(-|—)[а-я]+)', flags=re.IGNORECASE)
 
-MODAL_POSTFIX_REGEX = re.compile(r'[a-я]+(\-|\—)то(\s+|!|\?|\.|$)', flags=re.IGNORECASE)
+MODAL_POSTFIX_REGEX = re.compile(r'[a-я]+(\-|\—)то(\s+|!|\?|\.|$)')
 
-SENTENCES_SPLIT_REGEX = re.compile(r'\n+\s*\n+')
+SENTENCES_SPLIT_REGEX = re.compile(r'\n+\s*\n+', flags=re.IGNORECASE)
 SENTENCES_SPLIT_ADD_REGEX = re.compile(r'(\n+)([А-Я]{1})([^А-Я]{1})')
+
+STANDALONE_CONSTRUCTIONS_REGEX = re.compile(r'(?P<first>.+)((\s+(-|—|–)\s+)|(,\s*(то есть|или|как)\s+))(?P<second>.+)((\s+(-|—|–)\s+)|,)', flags=re.IGNORECASE)
 
 SINGLE_VERB_PREDICATES = {'first_case': ({'pos': ('VERB',),
                                          'mood': ('indc',),

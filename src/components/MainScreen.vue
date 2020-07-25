@@ -146,6 +146,10 @@
                                 <md-checkbox v-model="attributes.uniform_rows_count.checked"/>
                                 <span class="md-list-item-text">{{ attributes.uniform_rows_count.name }}</span>
                             </md-list-item>
+                            <md-list-item :key="attributes.standalone_constructions_count.name">
+                                <md-checkbox v-model="attributes.standalone_constructions_count.checked"/>
+                                <span class="md-list-item-text">{{ attributes.standalone_constructions_count.name }}</span>
+                            </md-list-item>
                             <md-list-item :key="attributes.introductory_words_count.name">
                                 <md-checkbox v-model="attributes.introductory_words_count.checked"/>
                                 <span class="md-list-item-text">{{ attributes.introductory_words_count.name }}</span>
@@ -390,6 +394,7 @@ export default {
       'con_coefficient': {name: 'Коэффициент связности текста (Con)', checked: true},
       'errors': {name: 'Количество несловарных слов', checked: true},
       'uniform_rows_count': {name: 'Предложения с однородными рядами', checked: true},
+      'standalone_constructions_count': {name: 'Предложения с обособленными приложениями', checked: true},
       'introductory_words_count': {name: 'Вводные слова и конструкции', checked: true},
       'comparatives_count': {name: 'Целевые, выделительные и сравнительные обороты', checked: true},
       'syntax_splices_count': {name: 'Синтаксические сращения', checked: true},
