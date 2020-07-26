@@ -19,10 +19,18 @@ def prepare_arrays(first_array, second_array):
 
 
 def pearson_correlation(first_array, second_array):
+    if not first_array or not second_array:
+        return 'N/A'
     return round(np.corrcoef(first_array, second_array)[0, 1], 2)
 
 
 def linear_regression(first_array, second_array):
+    if not first_array or not second_array:
+        return {'pvalue': 'N/A',
+                'rvalue': 'N/A',
+                'slope': 'N/A',
+                'stderr': 'N/A',
+                'intercept': 'N/A'}
     result = scipy.stats.linregress(first_array, second_array)
     return {'pvalue': round(result.pvalue, 2),
             'rvalue': round(result.rvalue, 2),
@@ -32,11 +40,14 @@ def linear_regression(first_array, second_array):
 
 
 def jaccard_correlation(first_array, second_array):
-    #return jaccard_score(first_array, second_array)
+    # return jaccard_score(first_array, second_array)
     return 'N/A'
 
 
 def student_correlation(first_array, second_array):
+    if not first_array or not second_array:
+        return {'pvalue': 'N/A',
+                'statistic': 'N/A'}
     result = stats.ttest_ind(first_array, second_array)
     return {'pvalue': round(result.pvalue, 2),
             'statistic': round(result.statistic, 2)}

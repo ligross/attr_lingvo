@@ -255,7 +255,7 @@
                     </md-button>
                 </md-empty-state>
 
-                <template v-if="results.attributes.length !== 0">
+                <template v-if="results.pearson_correlation !== null || results.linear_regression !== null || results.student_correlation !== null">
                     <md-button class="md-raised md-primary" @click="csvExport">Выгрузить</md-button>
                     <md-button class="md-raised md-primary" @click="setDone('third_step', 'results_step')">Пересчитать
                     </md-button>
@@ -299,6 +299,9 @@
                                         </md-list>
                                     </div>
                                 </md-table-toolbar>
+                                    <md-toolbar class="md-transparent" v-if="results.attributes.length === 0">
+                                        <h6 class="md-title">Не выбраны параметры, участвующие в подсчете общего коэффициента корреляции </h6>
+                                    </md-toolbar>
                                 <md-table-row slot="md-table-row" slot-scope="{ item }">
                                     <md-table-cell md-label="ID" md-sort-by="id" md-numeric>{{ item.id }}
                                     </md-table-cell>

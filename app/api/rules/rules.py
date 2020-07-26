@@ -55,6 +55,7 @@ COMPLEX_SYNTAX_ROWS = (
 MODAL_POSTFIX_EXCLUSIONS = (
     'кто-то',
     'что-то',
+    'когда-то',
     'какой-то',
     'чей-то',
     'сколько-то',
