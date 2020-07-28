@@ -63,10 +63,13 @@ MODAL_POSTFIX_EXCLUSIONS = (
     'каков-то',
     'чего-то',
     'чем-то',
+    'чём-то',
     'где-то',
     'куда-то',
     'откуда-то',
-    'почему-то'
+    'почему-то',
+    'зачем-то',
+    'то-то'
 )
 
 VERB_FORMS = ('VERB', 'INFN', 'PRTF', 'PRTS', 'GRND')
@@ -96,79 +99,80 @@ COMPLEX_SYNTAX_REGEX = re.compile('|'.join(COMPLEX_SYNTAX_ROWS), flags=re.IGNORE
 
 APPEAL_REGEX = re.compile('(?=(, (Name|Patr|Surn), )|(, Name (Patr|Surn), )|(, Name Patr Surn, ))', flags=re.IGNORECASE)
 
-OURS_PRONOUNS, THEIRS_PRONOUNS = ('я', 'мы', 'ты', 'мой', 'наш', 'твой'),\
+OURS_PRONOUNS, THEIRS_PRONOUNS = ('я', 'мы', 'ты', 'мой', 'наш', 'твой'), \
                                  ('он', 'она', 'они', 'её', 'ee', 'его', 'их', 'ваш')
 PRONOUNS_EXCLUSIONS = ('кто', 'что', 'чей', 'какой', 'как', 'каков', 'чего', 'чем', 'где', 'куда', 'откуда')
 
-COMPLEX_WORDS_REGEX = re.compile(r'([a-я]+(-|—)[а-я]+)', flags=re.IGNORECASE)
+COMPLEX_WORDS_REGEX = re.compile(r'([a-яё]+(-|—)[а-яё]+)', flags=re.IGNORECASE)
 
-MODAL_POSTFIX_REGEX = re.compile(r'[a-я]+(\-|\—)то(\s+|!|\?|\.|$)')
+MODAL_POSTFIX_REGEX = re.compile(r'(\s+|^)[a-яё]+(\-|\—)то(\s+|!|\?|\.|$)')
 
 SENTENCES_SPLIT_REGEX = re.compile(r'\n+\s*\n+', flags=re.IGNORECASE)
-SENTENCES_SPLIT_ADD_REGEX = re.compile(r'(\n+)([А-Я]{1})([^А-Я]{1})')
+SENTENCES_SPLIT_ADD_REGEX = re.compile(r'(\n+)([А-ЯЁ]{1})([^А-ЯЁ]{1})')
 
-STANDALONE_CONSTRUCTIONS_REGEX = re.compile(r'(?P<first>.+)((\s+(-|—|–)\s+)|(,\s*(то есть|или|как)\s+))(?P<second>.+)((\s+(-|—|–)\s+)|,)', flags=re.IGNORECASE)
+STANDALONE_CONSTRUCTIONS_REGEX = re.compile(
+    r'(?P<first>.+)((\s+(-|—|–)\s+)|(,\s*(то есть|или|как)\s+))(?P<second>.+)((\s+(-|—|–)\s+)|,)', flags=re.IGNORECASE)
 
 SINGLE_VERB_PREDICATES = {'first_case': ({'pos': ('VERB',),
-                                         'mood': ('indc',),
-                                         'tense': ('pres', 'futr'),
-                                         'numbers': ('plur', 'sing'),
-                                         'person': ('1per', '2per'),
-                                         }, None),
-                          'second_case': ({'pos': ('VERB',),
-                                          'mood': ('impr',),
-                                          'number': ('plur', 'sing'), }, None),
-                          'third_case': ({'pos': ('VERB',),
-                                         'person': ('3per',),
-                                         'number': ('plur', 'sing'),
-                                         'mood': ('indc',),
-                                         'tense': ('pres', 'futr'),
-                                         }, None),
-                          'fourth_case': ({'pos': ('VERB',),
-                                          'tense': ('past',),
-                                          'number': ('sing',),
-                                          'gender': ('neut',)
+                                          'mood': ('indc',),
+                                          'tense': ('pres', 'futr'),
+                                          'numbers': ('plur', 'sing'),
+                                          'person': ('1per', '2per'),
                                           }, None),
+                          'second_case': ({'pos': ('VERB',),
+                                           'mood': ('impr',),
+                                           'number': ('plur', 'sing'), }, None),
+                          'third_case': ({'pos': ('VERB',),
+                                          'person': ('3per',),
+                                          'number': ('plur', 'sing'),
+                                          'mood': ('indc',),
+                                          'tense': ('pres', 'futr'),
+                                          }, None),
+                          'fourth_case': ({'pos': ('VERB',),
+                                           'tense': ('past',),
+                                           'number': ('sing',),
+                                           'gender': ('neut',)
+                                           }, None),
                           'fifth_case': ({'pos': ('VERB',),
-                                         'person': ('3per',),
-                                         'number': ('sing',),
-                                         'tense': ('pres',),
-                                         }, None),
+                                          'person': ('3per',),
+                                          'number': ('sing',),
+                                          'tense': ('pres',),
+                                          }, None),
                           'sixth_case': ({
-                              'pos': ('PRTS',),
-                              'gender': ('neut',),
-                              'voice': ('pssv',)
-                          }, None),
+                                             'pos': ('PRTS',),
+                                             'gender': ('neut',),
+                                             'voice': ('pssv',)
+                                         }, None),
                           'seventh_case': ({
-                              'pos': ('INFN',),
-                          }, None)
+                                               'pos': ('INFN',),
+                                           }, None)
                           }
 
 SINGLE_VERB_SUBJECTS = {'first_case': ({'pos': ('NOUN', 'NPRO'),
-                                       'number': ('plur', 'sing'),
-                                       'case': ('nomn',)
-                                       }, None),
-                        'second_case': ({
-                            'pos': ('NOUN',),
-                            'number': ('plur', 'sing'),
-                            'case': ('nomn',)
-                        }, None),
-                        'third_case': ({
-                            'pos': ('NOUN',),
-                            'number': ('plur', 'sing'),
-                            'case': ('gen1', 'gen2')
-                        }, ('много', 'мало', 'несколько')),
-                        'fourth_case': ({'pos': ('NOUN', 'NPRO'),
                                         'number': ('plur', 'sing'),
-                                        'case': ('gen1', 'gen2')
-                                        }, 'у'),
+                                        'case': ('nomn',)
+                                        }, None),
+                        'second_case': ({
+                                            'pos': ('NOUN',),
+                                            'number': ('plur', 'sing'),
+                                            'case': ('nomn',)
+                                        }, None),
+                        'third_case': ({
+                                           'pos': ('NOUN',),
+                                           'number': ('plur', 'sing'),
+                                           'case': ('gen1', 'gen2')
+                                       }, ('много', 'мало', 'несколько')),
+                        'fourth_case': ({'pos': ('NOUN', 'NPRO'),
+                                         'number': ('plur', 'sing'),
+                                         'case': ('gen1', 'gen2')
+                                         }, 'у'),
                         'fifth_case': ({'pos': ('NOUN', 'NPRO'),
-                                       'number': ('plur', 'sing'),
-                                       'case': ('datv',)
-                                       }, None),
+                                        'number': ('plur', 'sing'),
+                                        'case': ('datv',)
+                                        }, None),
                         'sixth_case': ({
-                            'pos': ('VERB',),
-                            'number': ('plur', 'sing'),
-                            'tense': ('pres', 'futr', 'past'),
-                        }, None)
+                                           'pos': ('VERB',),
+                                           'number': ('plur', 'sing'),
+                                           'tense': ('pres', 'futr', 'past'),
+                                       }, None)
                         }

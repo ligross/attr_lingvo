@@ -468,7 +468,7 @@ class Text:
                     sentence[x.start():x.end()].strip()).normal_form not in MODAL_POSTFIX_EXCLUSIONS,
                                       raw_matches))
                 modal_postfix_count += len(matches)
-                if self.debug_available:
+                if matches and self.debug_available:
                     debug.append(highlight_match(sentence, matches))
         self.extended_results['modal_postfix_count'] = {'value': modal_postfix_count,
                                                         'description': 'Наличие/отсутствие модального постфикса «-то»',
