@@ -18,7 +18,7 @@ TOKENIZER._params.abbrev_types.update(ADDITIONAL_ABBREVIATIONS)
 
 
 def tokenize_sentences(text):
-    return TOKENIZER.tokenize(text)
+    return [s.replace('\n\n', '\n').strip() for s in TOKENIZER.tokenize(text)]
 
 
 def tokenize_corp_sentences(text):
@@ -28,6 +28,7 @@ def tokenize_corp_sentences(text):
         new_sentences = SENTENCES_SPLIT_REGEX.split(raw_sentence)
         skip_next = False
         for ind, new_sentence in enumerate(new_sentences):
+            new_sentence = new_sentence.replace('\n\n', '\n')
             #sentences = new_sentence.split()
             # matches = list(SENTENCES_SPLIT_ADD_REGEX.finditer(new_sentence))
             # if matches:
@@ -62,13 +63,26 @@ def parse_word_morph(word):
 
 def parse_sentence_morph(sentence):
     parsed_sentence = []
+    sentence = sentence.replace('  ', ' ')
     ll = [[word_tokenize(w), ' '] for w in sentence.split()]
     for word in list(itertools.chain(*list(itertools.chain(*ll)))):
         if word in PUNCTUATION:
             parsed_sentence.append((word, None))
         else:
             parsed_sentence.append((word, parse_word_morph(word)))
-    return parsed_sentence
+    return parsed_sentence[:-1]
+
+
+class Match:
+    def __init__(self, word, pos=('', '', '')):
+        self._start, self._end, self.word = word[0], word[1], word[2]
+        self.pos_start, self.pos_end, self.pos_word = pos[0], pos[1], pos[2]
+
+    def start(self):
+        return self._start
+
+    def end(self):
+        return self._end
 
 
 class MorphRegexConverter:
@@ -78,12 +92,19 @@ class MorphRegexConverter:
 
     def convert(self, sentence):
         converted_sentence = ''
+        all_poses, current_pos, converted_pos = [], 0, 0
         for word, parsed_word in sentence:
             if not parsed_word:
                 converted_sentence += word
+                converted_pos += len(word)
+                current_pos += len(word)
             else:
                 if self.pos and parsed_word.tag.POS in self.pos:
                     converted_sentence += parsed_word.tag.POS
+                    all_poses.append(Match((current_pos, current_pos + len(word), word),
+                                           (converted_pos, converted_pos + len(parsed_word.tag.POS), parsed_word.tag.POS)))
+                    current_pos += len(word)
+                    converted_pos += len(parsed_word.tag.POS)
                 else:
                     if self.tags:
                         found = False
@@ -91,12 +112,20 @@ class MorphRegexConverter:
                             if tag in parsed_word.tag:
                                 found = True
                                 converted_sentence += tag
+                                all_poses.append(Match((current_pos, current_pos + len(word), word),
+                                                       (converted_pos, converted_pos + len(tag), tag)))
+                                converted_pos += len(tag)
+                                current_pos += len(word)
                                 break
                         if not found:
                             converted_sentence += word
+                            converted_pos += len(word)
+                            current_pos += len(word)
                     else:
                         converted_sentence += word
-        return converted_sentence
+                        converted_pos += len(word)
+                        current_pos += len(word)
+        return converted_sentence, all_poses
 
 
 class ExtendedMorphRegexConverter:

@@ -11,7 +11,7 @@ from app.api.rules.modal_particles import MODAL_PARTICLES_REGEX
 from app.api.rules.rules import *
 from app.api.utils.display_utils import highlight_match
 from app.api.utils.morph_utils import parse_sentence_morph, MorphRegexConverter, match_morph, \
-    parse_word_morph, tokenize_sentences, tokenize_corp_sentences
+    parse_word_morph, tokenize_sentences, tokenize_corp_sentences, Match
 from app.api.utils.ngrams import log_likelihood, create_bigrams, create_trigrams
 
 NAN_ELEMENT = 'N/A'
@@ -230,11 +230,22 @@ class Text:
         converter = MorphRegexConverter(pos=('NOUN', 'ADJF', 'ADJS', 'VERB', 'INFN'))
         debug = []
         for parsed_sentence, sentence in zip(self.morph_parsed_sentences, self.sentences):
-            matches = UNIFORM_ROWS_REGEX.findall(converter.convert(sentence=parsed_sentence))
-            if matches:
+            converted_sentence, poses = converter.convert(sentence=parsed_sentence)
+            raw_matches = list(UNIFORM_ROWS_REGEX.finditer(converted_sentence, overlapped=True))
+            matches = []
+            for match in raw_matches:
+                match_start, match_end = None, None
+                for pos in poses:
+                    if pos.pos_start == match.start():
+                        match_start = pos.start()
+                    if pos.pos_end == match.end():
+                        match_end = pos.end()
+                if match_start and match_end:
+                    matches.append(Match((match_start, match_end, ''), (match.start(), match.end(), '')))
+
                 uniform_rows_count += len(matches)
-                if self.debug_available:
-                    debug.append(sentence)
+                if self.debug_available and matches:
+                    debug.append(highlight_match(sentence, matches))
         self.extended_results['uniform_rows_count'] = {'value': uniform_rows_count,
                                                        'description': 'Предложения с однородными рядами',
                                                        'debug': debug}
@@ -244,7 +255,7 @@ class Text:
         introductory_words_count = 0
         debug = []
         for sentence in self.sentences:
-            matches = list(INTRO_WORDS_REGEXP.finditer(sentence))
+            matches = list(INTRO_WORDS_REGEXP.finditer(sentence, overlapped=True))
             if matches:
                 introductory_words_count += len(matches)
                 if self.debug_available:
@@ -259,11 +270,20 @@ class Text:
         converter = MorphRegexConverter(pos=('INFN',))
         debug = []
         for parsed_sentence, sentence in zip(self.morph_parsed_sentences, self.sentences):
-            pos_matches = COMPARATIVES_REGEX_POS.findall(converter.convert(sentence=parsed_sentence))
-            matches = COMPARATIVES_REGEX.findall(sentence)
+            converted_sentence, poses = converter.convert(sentence=parsed_sentence)
+            raw_pos_matches = list(COMPARATIVES_REGEX_POS.finditer(converted_sentence, overlapped=True))
+            pos_matches = []
+            for match in raw_pos_matches:
+                pos = [pos for pos in poses if pos.pos_start == match.start(4) and pos.pos_end == match.end(4)][0]
+                if 'с целью' in match.string.lower():
+                    pos._start -= 8
+                elif 'из расчeта' in match.string.lower() or 'из расчёта' in match.string.lower():
+                    pos._start -= 11
+                pos_matches.append(pos)
+            matches = list(COMPARATIVES_REGEX.finditer(sentence))
             comparatives_count += len(pos_matches) + len(matches)
             if (pos_matches or matches) and self.debug_available:
-                debug.append(sentence)
+                debug.append(highlight_match(sentence, matches + pos_matches))
         self.extended_results['comparatives_count'] = {'value': comparatives_count,
                                                        'description': 'Целевые, выделительные и сравнительные обороты',
                                                        'debug': debug}
@@ -271,15 +291,22 @@ class Text:
 
     def syntax_splices_count(self):
         syntax_splices_count = 0
-        converter = MorphRegexConverter(pos=('VERB',))
         debug = []
         for parsed_sentence, sentence in zip(self.morph_parsed_sentences, self.sentences):
-            pos_matches = SYNTAX_SPLICES_REGEX_POS.findall(converter.convert(sentence=parsed_sentence))
-            matches = SYNTAX_SPLICES_REGEX.findall(sentence)
+            raw_pos_matches = SYNTAX_SPLICES_REGEX_POS.finditer(sentence, overlapped=True)
+            pos_matches = []
+            for raw_pos_match in raw_pos_matches:
+                _, word1, _, word2, _ = raw_pos_match.groups()
+                word1, word2 = parse_word_morph(word1), parse_word_morph(word2)
+                if word1.tag.POS == 'VERB' and word2.tag.POS == 'VERB' \
+                        and word1.word not in SYNTAX_SPLICES_EXCLUSIONS and word2.word not in SYNTAX_SPLICES_EXCLUSIONS:
+                    pos_matches.append(raw_pos_match)
+
+            matches = list(SYNTAX_SPLICES_REGEX.finditer(sentence, overlapped=True))
             if pos_matches or matches:
                 syntax_splices_count += len(pos_matches) + len(matches)
                 if self.debug_available:
-                    debug.append(sentence)
+                    debug.append(highlight_match(sentence, pos_matches + matches))
         self.extended_results['syntax_splices_count'] = {'value': syntax_splices_count,
                                                          'description': 'Синтаксические сращения',
                                                          'debug': debug}
@@ -289,7 +316,7 @@ class Text:
         comparative_clauses_count = 0
         debug = []
         for sentence in self.sentences:
-            matches = list(COMPARATIVE_CLAUSES_REGEX.finditer(sentence))
+            matches = list(COMPARATIVE_CLAUSES_REGEX.finditer(sentence, overlapped=True))
             if matches:
                 comparative_clauses_count += len(matches)
                 if self.debug_available:
@@ -303,7 +330,8 @@ class Text:
         epenthetic_constructions_count = 0
         debug = []
         for sentence in self.sentences:
-            matches = list(EPINTHETIC_CONSTRUCTIONS_REGEX.finditer(sentence))
+            matches = list(EPINTHETIC_CONSTRUCTIONS_REGEX.finditer(sentence, overlapped=True))
+            matches = [match for match in matches if '»' not in sentence[match.start() - 2: match.start()]]
             if matches:
                 epenthetic_constructions_count += len(matches)
                 if self.debug_available:
@@ -317,13 +345,13 @@ class Text:
         collation_clauses_count = 0
         debug = []
         for sentence in self.sentences:
-            matches = list(COLLATION_CLAUSES_REGEX.finditer(sentence))
+            matches = list(COLLATION_CLAUSES_REGEX.finditer(sentence, overlapped=True))
             if matches:
                 collation_clauses_count += len(matches)
                 if self.debug_available:
                     debug.append(highlight_match(sentence, matches))
         self.extended_results['collation_clauses_count'] = {'value': collation_clauses_count,
-                                                            'description': 'Сопоставительные придаточные',
+                                                            'description': 'Конструкции с сопоставительными союзами',
                                                             'debug': debug}
         return (collation_clauses_count / self.total_words) * IPM_MULTIPLIER
 
@@ -331,7 +359,7 @@ class Text:
         complex_syntax_constructs_count = 0
         debug = []
         for sentence in self.sentences:
-            matches = list(COMPLEX_SYNTAX_REGEX.finditer(sentence))
+            matches = list(COMPLEX_SYNTAX_REGEX.finditer(sentence, overlapped=True))
             if matches:
                 complex_syntax_constructs_count += len(matches)
                 if self.debug_available:
@@ -356,7 +384,7 @@ class Text:
                         has_subject = next((True for w in parsed_sentence
                                             for tags, b_words in subject_rules
                                             if match_morph(w[1], SINGLE_VERB_SUBJECTS[tags]) and (
-                                                        not b_words[1] or predicate[0][1].normal_form in b_words[1])),
+                                                    not b_words[1] or predicate[0][1].normal_form in b_words[1])),
                                            None)
                         if predicate_type == 'seventh_case' and not has_subject:
                             has_subject = next((True for word in parsed_sentence
@@ -383,11 +411,19 @@ class Text:
         converter = MorphRegexConverter(tags=('Name', 'Patr', 'Surn'))
         debug = []
         for parsed_sentence, sentence in zip(self.morph_parsed_sentences, self.sentences):
-            matches = APPEAL_REGEX.findall(converter.convert(sentence=parsed_sentence))
-            if matches:
+            converted_sentence, poses = converter.convert(sentence=parsed_sentence)
+            raw_matches = list(APPEAL_REGEX.finditer(converted_sentence, overlapped=True))
+            if raw_matches:
+                poses = [pos for pos in poses for match in raw_matches if
+                         pos.pos_start == match.start(3) and pos.pos_end == match.end(3)]
+                matches = []
+                for pose in poses:
+                    word = parse_word_morph(pose.word)
+                    if 'nomn' in word.tag or 'voct' in word.tag:
+                        matches.append(pose)
                 appeal_count += len(matches)
-                if self.debug_available:
-                    debug.append(sentence)
+                if self.debug_available and matches:
+                    debug.append(highlight_match(sentence, matches))
         self.extended_results['appeal_count'] = {'value': appeal_count,
                                                  'description': 'Обращения',
                                                  'debug': debug}
@@ -397,19 +433,27 @@ class Text:
         dichotomy_ours_count = 0
         dichotomy_theirs_count = 0
         ours_debug, theirs_debug = [], []
-        for parsed_sentence, sentence in zip(self.morph_parsed_sentences_wo_punkt, self.sentences):
+        for parsed_sentence, sentence in zip(self.morph_parsed_sentences, self.sentences):
             theirs_found, ours_found = False, False
+            theirs_matches, ours_matches = [], []
+            current_pos = 0
             for word in parsed_sentence:
-                if word[1].normal_form in THEIRS_PRONOUNS:
-                    theirs_found = True
-                    dichotomy_theirs_count += 1
-                elif word[1].normal_form in OURS_PRONOUNS:
-                    ours_found = True
-                    dichotomy_ours_count += 1
+                if not word[1]:
+                    pass
+                else:
+                    if word[1].normal_form in THEIRS_PRONOUNS:
+                        theirs_found = True
+                        dichotomy_theirs_count += 1
+                        theirs_matches.append(Match((current_pos, current_pos + len(word[0]), '')))
+                    elif word[1].normal_form in OURS_PRONOUNS:
+                        ours_found = True
+                        dichotomy_ours_count += 1
+                        ours_matches.append(Match((current_pos, current_pos + len(word[0]), '')))
+                current_pos += len(word[0])
             if ours_found and self.debug_available:
-                ours_debug.append(sentence)
+                ours_debug.append(highlight_match(sentence, ours_matches))
             if theirs_found and self.debug_available:
-                theirs_debug.append(sentence)
+                theirs_debug.append(highlight_match(sentence, theirs_matches))
         self.extended_results['dichotomy_ours_count'] = {'value': dichotomy_ours_count,
                                                          'description': 'Местоимения "я, мы"-группы',
                                                          'debug': ours_debug}
@@ -424,21 +468,25 @@ class Text:
         complex_words_count = 0
         debug = []
         for sentence in self.sentences:
-            raw_matches = list(COMPLEX_WORDS_REGEX.finditer(sentence))
+            raw_matches = list(COMPLEX_WORDS_REGEX.finditer(sentence, overlapped=True))
             matches = []
             for raw_match in raw_matches:
-                first_word, second_word = raw_match.string[raw_match.start():raw_match.end()].replace('—', '-').split(
-                    '-')
-                first_word, second_word = parse_word_morph(first_word), parse_word_morph(second_word)
-                if first_word.tag.POS != 'NOUN' or second_word.tag.POS != 'NOUN':
+                _, first_word, _, second_word, _ = raw_match.groups()
+                parsed_first_word, parsed_second_word = parse_word_morph(first_word), parse_word_morph(second_word)
+                if parsed_first_word.tag.POS != 'NOUN' \
+                        or parsed_second_word.tag.POS != 'NOUN' \
+                        or parsed_first_word.normal_form == parsed_second_word.normal_form \
+                        or len(first_word) == 1 \
+                        or len(second_word) == 1 \
+                        or (first_word[0].isupper() and second_word[0].isupper()):
                     continue
-                if first_word.tag.case == second_word.tag.case \
-                        and first_word.tag.number == second_word.tag.number:
+                if parsed_first_word.tag.case == parsed_first_word.tag.case \
+                        and parsed_first_word.tag.number == parsed_first_word.tag.number:
                     matches.append(raw_match)
             if matches:
                 complex_words_count += len(matches)
                 if self.debug_available:
-                    debug.append(highlight_match(sentence, matches))
+                    debug.append(highlight_match(sentence, matches, start_shift=0, end_shift=-1))
         self.extended_results['complex_words_count'] = {'value': complex_words_count,
                                                         'description': 'Сложные слова полуслитного написания',
                                                         'debug': debug}
@@ -479,11 +527,11 @@ class Text:
         interjections_count = 0
         debug = []
         for sentence in self.sentences:
-            matches = list(INTERJECTIONS_REGEXP.finditer(sentence))
+            matches = list(INTERJECTIONS_REGEXP.finditer(sentence, overlapped=True))
             if matches:
                 interjections_count += len(matches)
                 if self.debug_available:
-                    debug.append(highlight_match(sentence, matches))
+                    debug.append(highlight_match(sentence, matches, end_shift=-1))
         self.extended_results['interjections_count'] = {'value': interjections_count,
                                                         'description': 'Междометия',
                                                         'debug': debug}
@@ -493,7 +541,7 @@ class Text:
         intensifiers = {}
         debug = []
         for sentence in self.sentences:
-            raw_matches = list(INTENSIFIERS_REGEX.finditer(sentence))
+            raw_matches = list(INTENSIFIERS_REGEX.finditer(sentence, overlapped=True))
             matches = []
             for raw_match in raw_matches:
                 substring = sentence[raw_match.start():raw_match.end()].lower()
@@ -588,18 +636,22 @@ class Text:
         standalone_constructions_count = 0
         debug = []
         for sentence in self.sentences:
-            match = STANDALONE_CONSTRUCTIONS_REGEX.match(sentence)
-            if match:
+            raw_matches = list(STANDALONE_CONSTRUCTIONS_REGEX.finditer(sentence))
+            matches = []
+            for match in raw_matches:
                 first_part, second_part = match.groupdict().values()
                 first_part, second_part = parse_sentence_morph(first_part), parse_sentence_morph(second_part)
-                first_part_nouns = [(w[1].tag.case, w[1].tag.number) for w in first_part if w[1] and w[1].tag.POS == 'NOUN']
+                first_part_nouns = [(w[1].tag.case, w[1].tag.number) for w in first_part if
+                                    w[1] and w[1].tag.POS == 'NOUN']
                 if not first_part_nouns:
                     continue
-                second_part_nouns = [(w[1].tag.case, w[1].tag.number) for w in second_part if w[1] and w[1].tag.POS == 'NOUN']
+                second_part_nouns = [(w[1].tag.case, w[1].tag.number) for w in second_part if
+                                     w[1] and w[1].tag.POS == 'NOUN']
                 if set(second_part_nouns) & set(first_part_nouns):
                     standalone_constructions_count += 1
-                    if self.debug_available:
-                        debug.append(sentence)
+                    matches.append(match)
+            if self.debug_available and matches:
+                debug.append(highlight_match(sentence, matches))
         self.extended_results['standalone_constructions_count'] = {'value': standalone_constructions_count,
                                                                    'description': 'Предложения с обособленными приложениями',
                                                                    'debug': debug}

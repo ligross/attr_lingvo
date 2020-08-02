@@ -1,4 +1,4 @@
-import re
+import regex as re
 
 INTENSIFIERS_LIST = (
     'абсолютно',

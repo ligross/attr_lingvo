@@ -1,4 +1,4 @@
-import re
+import regex as re
 
 UNIFORM_ROWS = (
     r'(NOUN,\s*NOUN,\s*NOUN)',
@@ -26,15 +26,25 @@ ADDITIONAL_ABBREVIATIONS = (
 )
 
 COLLATION_ROWS = (
-    r'(если .+,\s*то .+$)',
-    r'(между тем как .+,.+$)',
+    r'((^|\s|,)если .+,\s*то .+$)',
+    r'((^|\s|,)как,\s*так и .+$)',
+    r'((^|\s|,)не только,\s*и .+$)',
+    r'((^|\s|,)не только,\s*но и .+$)',
+    r'((^|\s|,)не столько,\s*сколько .+$)',
+    r'(,\s*в то время как .+$)',
+    r'(^в то время как .+,.+$)',
+    r'(,\s*тогда как .+$)',
+    r'(^тогда как .+,.+$)',
+    r'(^между тем как .+,.+$)',
     r'(,\s*между тем как .+$)',
-    r'(ровно как .+,.+$)',
+    r'(^ровно как .+,.+$)',
     r'(,\s*ровно как .+$)',
-    r'(так же как .+,.+$)',
+    r'(^так же как .+,.+$)',
     r'(,\s*так же как .+$)',
-    r'(поскольку .+,\s*постольку .+$)',
-    r'( постольку,\s*постольку .+$)',
+    r'((^|\s|,)хотя и .+,\s*но .+$)',
+    r'((^|\s|,)не то чтобы .+,\s*но .+$)',
+    r'((^|\s|,)поскольку .+,\s*постольку .+$)',
+    r'((\s|,|:)постольку,\s*постольку .+$)',
 )
 
 COMPLEX_SYNTAX_ROWS = (
@@ -72,38 +82,41 @@ MODAL_POSTFIX_EXCLUSIONS = (
     'то-то'
 )
 
+SYNTAX_SPLICES_EXCLUSIONS = ('нет', 'нет-нет', 'нетнет')
+
 VERB_FORMS = ('VERB', 'INFN', 'PRTF', 'PRTS', 'GRND')
 
 UNIFORM_ROWS_REGEX = re.compile('|'.join(UNIFORM_ROWS), flags=re.IGNORECASE)
 
-COMPARATIVES_REGEX_POS = re.compile('(^|[\\s,:\-—«»"\'])(с целью|из расч(е|ё)та) INFN($|[\\s,.:\-—«»"\'])',
+COMPARATIVES_REGEX_POS = re.compile('(^|[\\s,:\-—«»"\'])(с целью|из расч(е|ё)та) (INFN)($|[\\s,.:\-—«»"\'])',
                                     flags=re.IGNORECASE)
-COMPARATIVES_REGEX = re.compile('(^|[\\s,:\-—«»"\'])(кроме|помимо|включая|наряду с)|(как|будто)($|[\\s,.:\-—«»"\'])',
+COMPARATIVES_REGEX = re.compile('(^|[\\s,:\-—«»"\'])(кроме|помимо|включая|наряду с)|(как|будто)($|[\\s,.:«»"\'])',
                                 flags=re.IGNORECASE)
 
-SYNTAX_SPLICES_REGEX_POS = re.compile('(^|[\\s,:\-—«»"\'])(VERB (да и|да) VERB)($|[\\s,.:\-—«»"\'])',
+SYNTAX_SPLICES_REGEX_POS = re.compile('(^|[\\s,:—«»"\'])([а-яА-Яё\-]+)\s+(да и|да)\s+([а-яА-Яё\-]+)($|[\\s,.:—«»"\'])',
                                       flags=re.IGNORECASE)
 SYNTAX_SPLICES_REGEX = re.compile(
-    r'(^|[\\s,:\-—«»"\'])(что было,\s*то было|что было,\s*то и есть|что было,\s*то есть|что есть,\s*то есть|что есть,\s*то и есть|что есть,\s*то и будет|что есть,\s*то будет)($|[\\s,.:\-—«»"\'])',
+    r'(^|[\s,:\-—«»"\'])(что было,\s*то было|что было,\s*то и есть|что было,\s*то есть|что есть,\s*то есть|что есть,\s*то и есть|что есть,\s*то и будет|что есть,\s*то будет)($|[\s,.:\-—«»"\'])',
     flags=re.IGNORECASE)
 
 COMPARATIVE_CLAUSES_REGEX = re.compile(
     r'((как|подобно тому как|ровно тому как) .+, .+)|(,\s*как .+)|((подобно тому|ровно тому,\s*как) .+)|((как будто|будто|словно|точно) .+, .+)|(.+, (как будто|будто|словно|точно) .+)',
     flags=re.IGNORECASE)
 
-EPINTHETIC_CONSTRUCTIONS_REGEX = re.compile(r'(\s+(-|—|–)\s+.+\s+(-|—|–)\s+)|(\(.+\))', flags=re.IGNORECASE)
+EPINTHETIC_CONSTRUCTIONS_REGEX = re.compile(r'(\s+(-|—|—)\s+.+\s+(-|—|—)\s+)|(\(.+\))', flags=re.IGNORECASE)
 
-COLLATION_CLAUSES_REGEX = re.compile('|'.join(COLLATION_ROWS), flags=re.IGNORECASE)
+COLLATION_CLAUSES_REGEX = re.compile("|".join(COLLATION_ROWS), flags=re.IGNORECASE)
 
 COMPLEX_SYNTAX_REGEX = re.compile('|'.join(COMPLEX_SYNTAX_ROWS), flags=re.IGNORECASE)
 
-APPEAL_REGEX = re.compile('(?=(, (Name|Patr|Surn), )|(, Name (Patr|Surn), )|(, Name Patr Surn, ))', flags=re.IGNORECASE)
+APPEAL_REGEX = re.compile('((^|,\s)(Name|Patr|Surn)(,\s|!|\.|$))|((^|,\s)Name (Patr|Surn)(,\s|!|\.|$))|((^|,\s)Name Patr Surn(,\s|!|\.|$))', flags=re.IGNORECASE)
 
 OURS_PRONOUNS, THEIRS_PRONOUNS = ('я', 'мы', 'ты', 'мой', 'наш', 'твой'), \
                                  ('он', 'она', 'они', 'её', 'ee', 'его', 'их', 'ваш')
 PRONOUNS_EXCLUSIONS = ('кто', 'что', 'чей', 'какой', 'как', 'каков', 'чего', 'чем', 'где', 'куда', 'откуда')
 
-COMPLEX_WORDS_REGEX = re.compile(r'([a-яё]+(-|—)[а-яё]+)', flags=re.IGNORECASE)
+COMPLEX_WORDS_REGEX = re.compile(r'(^|\s|,|—|:|«|»|"|\')([А-ЯЁa-яё]+)(-|—)([а-яё]+)($|\s|,|\.|:|—|«|»|"|\')',
+                                 flags=re.IGNORECASE)
 
 MODAL_POSTFIX_REGEX = re.compile(r'(\s+|^)[a-яё]+(\-|\—)то(\s+|!|\?|\.|$)')
 
@@ -111,7 +124,7 @@ SENTENCES_SPLIT_REGEX = re.compile(r'\n+\s*\n+', flags=re.IGNORECASE)
 SENTENCES_SPLIT_ADD_REGEX = re.compile(r'(\n+)([А-ЯЁ]{1})([^А-ЯЁ]{1})')
 
 STANDALONE_CONSTRUCTIONS_REGEX = re.compile(
-    r'(?P<first>.+)((\s+(-|—|–)\s+)|(,\s*(то есть|или|как)\s+))(?P<second>.+)((\s+(-|—|–)\s+)|,)', flags=re.IGNORECASE)
+    r'(\b(?P<first>[a-яё]+)((\s+(-|—|–)\s+)(?P<second>.+(-|—|–)\s+))|(\b(?P<first>[a-яё]+)(,\s*(то есть|или|как)\s+))(?P<second>.+))', flags=re.IGNORECASE)
 
 SINGLE_VERB_PREDICATES = {'first_case': ({'pos': ('VERB',),
                                           'mood': ('indc',),

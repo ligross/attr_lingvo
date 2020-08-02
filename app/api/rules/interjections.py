@@ -1,6 +1,7 @@
-import re
+import regex as re
 
 INTERJECTIONS_LIST = (
+    'эм',
     'ах',
     'ой-ой-ой',
     'ой',

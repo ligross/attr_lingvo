@@ -402,7 +402,7 @@ export default {
       'comparatives_count': {name: 'Целевые, выделительные и сравнительные обороты', checked: true},
       'syntax_splices_count': {name: 'Синтаксические сращения', checked: true},
       'comparative_clauses_count': {name: 'Сравнительные придаточные', checked: true},
-      'collation_clauses_count': {name: 'Сопоставительные придаточные', checked: true},
+      'collation_clauses_count': {name: 'Конструкции с сопоставительными союзами', checked: true},
       'epenthetic_constructions_count': {name: 'Вставные конструкции', checked: true},
       'complex_syntax_constructs_count': {name: 'Сложные синтаксические конструкции', checked: true},
       'single_verb_count': {name: 'Глагольные односоставные предложения', checked: true},
@@ -561,7 +561,7 @@ export default {
     }
 
     .viewport {
-        width: 500px;
+        width: 550px;
         max-width: 100%;
         display: inline-block;
         vertical-align: top;

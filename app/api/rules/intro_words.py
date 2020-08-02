@@ -1,4 +1,4 @@
-import re
+import regex as re
 
 INTRO_WORDS = ('а быть может',
                'а вернее',
