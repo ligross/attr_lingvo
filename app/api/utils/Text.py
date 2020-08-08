@@ -404,11 +404,14 @@ class Text:
                         predicate = (parsed_sentence[i - 1] if i > 0 else None, parsed_sentence[i])
                         subject_keys = ('first_case', 'second_case', 'third_case', 'fourth_case', 'fifth_case')
                         subject_rules = list(filter(lambda r: r[0] in subject_keys, SINGLE_VERB_SUBJECTS.items()))
-                        has_subject = next((True for w in parsed_sentence
-                                            for tags, b_words in subject_rules
-                                            if match_morph(w[1], SINGLE_VERB_SUBJECTS[tags]) and (
-                                                    not b_words[1] or predicate[0][1].normal_form in b_words[1])),
-                                           None)
+                        try:
+                            has_subject = next((True for w in parsed_sentence
+                                                for tags, b_words in subject_rules
+                                                if match_morph(w[1], SINGLE_VERB_SUBJECTS[tags]) and (
+                                                        not b_words[1] or (predicate[0] and predicate[0][1].normal_form in b_words[1]))),
+                                               None)
+                        except Exception as e:
+                            print(e)
                         if predicate_type == 'seventh_case' and not has_subject:
                             has_subject = next((True for word in parsed_sentence
                                                 if match_morph(word[1], SINGLE_VERB_SUBJECTS['sixth_case'])
