@@ -285,9 +285,32 @@ class Text:
             if (pos_matches or matches) and self.debug_available:
                 debug.append(highlight_match(sentence, matches + pos_matches))
         self.extended_results['comparatives_count'] = {'value': comparatives_count,
-                                                       'description': 'Целевые, выделительные и сравнительные обороты',
+                                                       'description': 'Целевые и выделительные обороты',
                                                        'debug': debug}
         return (comparatives_count / self.total_words) * IPM_MULTIPLIER
+
+    def comparatives_constructions_count(self):
+        comparatives_constructions_count = 0
+        debug = []
+        for sentence in self.sentences:
+            matches = list(COMPARATIVE_CONSTRUCTIONS_REGEX.finditer(sentence, overlapped=True))
+            matches = [match for match in matches if match.groups()[2] != 'как'
+                       or (' так и ' not in sentence and not any((w in match.string for w in (' как полагается',
+                                                                            ' как правило',
+                                                                            ' как это ни странно',
+                                                                            ' как ни странно',
+                                                                            ' как раз',
+                                                                            ' как следует',
+                                                                            ' как всегда',
+                                                                            ' как никогда'))))]
+            if matches:
+                comparatives_constructions_count += len(matches)
+                if self.debug_available:
+                    debug.append(highlight_match(sentence, matches))
+        self.extended_results['comparatives_constructions_count'] = {'value': comparatives_constructions_count,
+                                                                     'description': 'Конструкции с семантикой сравнения',
+                                                                     'debug': debug}
+        return (comparatives_constructions_count / self.total_words) * IPM_MULTIPLIER
 
     def syntax_splices_count(self):
         syntax_splices_count = 0
@@ -408,22 +431,49 @@ class Text:
 
     def appeal_count(self):
         appeal_count = 0
-        converter = MorphRegexConverter(tags=('Name', 'Patr', 'Surn'))
+        converter = MorphRegexConverter(tags=('Name', 'Patr', 'Surn', 'NPRO', 'NOUN', 'ADJF', 'ADJF', 'Anum'))
         debug = []
         for parsed_sentence, sentence in zip(self.morph_parsed_sentences, self.sentences):
             converted_sentence, poses = converter.convert(sentence=parsed_sentence)
             raw_matches = list(APPEAL_REGEX.finditer(converted_sentence, overlapped=True))
+            if len(list(filter(lambda s: s.group(1) and s.group(1).startswith(','), raw_matches))) > 1:
+                raw_matches = list(filter(lambda s: not s.group(1).startswith(','), raw_matches))
             if raw_matches:
-                poses = [pos for pos in poses for match in raw_matches if
-                         pos.pos_start == match.start(3) and pos.pos_end == match.end(3)]
                 matches = []
-                for pose in poses:
-                    word = parse_word_morph(pose.word)
-                    if 'nomn' in word.tag or 'voct' in word.tag:
-                        matches.append(pose)
-                appeal_count += len(matches)
-                if self.debug_available and matches:
-                    debug.append(highlight_match(sentence, matches))
+                for match in raw_matches:
+                    match_start, match_end = None, None
+                    start_ind, end_ind = 0, 0
+                    for pos in poses:
+                        if pos.pos_start == match.start(7):
+                            start_ind = 7
+                            match_start = pos.start()
+                        elif pos.pos_start == match.start(3):
+                            start_ind = 3
+                            match_start = pos.start()
+                        elif pos.pos_start == match.start(12):
+                            start_ind = 12
+                            match_start = pos.start()
+                        elif pos.pos_start == match.start(20):
+                            start_ind = 20
+                            match_start = pos.start()
+                        if pos.pos_end == match.end(7):
+                            end_ind = 7
+                            match_end = pos.end()
+                        elif pos.pos_end == match.end(3):
+                            end_ind = 3
+                            match_end = pos.end()
+                        elif pos.pos_end == match.end(12):
+                            end_ind = 12
+                            match_end = pos.end()
+                        elif pos.pos_end == match.end(20):
+                            end_ind = 20
+                            match_end = pos.end()
+                    if match_start is not None and match_end is not None:
+                        matches.append(Match((match_start, match_end, ''), (match.start(start_ind), match.end(end_ind), '')))
+
+                    appeal_count += len(matches)
+                    if self.debug_available and matches:
+                        debug.append(highlight_match(sentence, matches))
         self.extended_results['appeal_count'] = {'value': appeal_count,
                                                  'description': 'Обращения',
                                                  'debug': debug}
@@ -704,6 +754,10 @@ class Text:
         if 'comparatives_count' in self.attributes.keys():
             self.results['comparatives_count'] = {'name': self.attributes['comparatives_count']['name'],
                                                   'result': self.comparatives_count()}
+        if 'comparatives_constructions_count' in self.attributes.keys():
+            self.results['comparatives_constructions_count'] = {
+                'name': self.attributes['comparatives_constructions_count']['name'],
+                'result': self.comparatives_constructions_count()}
         if 'syntax_splices_count' in self.attributes.keys():
             self.results['syntax_splices_count'] = {'name': self.attributes['syntax_splices_count']['name'],
                                                     'result': self.syntax_splices_count()}

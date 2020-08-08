@@ -90,8 +90,9 @@ UNIFORM_ROWS_REGEX = re.compile('|'.join(UNIFORM_ROWS), flags=re.IGNORECASE)
 
 COMPARATIVES_REGEX_POS = re.compile('(^|[\\s,:\-—«»"\'])(с целью|из расч(е|ё)та) (INFN)($|[\\s,.:\-—«»"\'])',
                                     flags=re.IGNORECASE)
-COMPARATIVES_REGEX = re.compile('(^|[\\s,:\-—«»"\'])(кроме|помимо|включая|наряду с)|(как|будто)($|[\\s,.:«»"\'])',
+COMPARATIVES_REGEX = re.compile('(^|[\\s,:\-—«»"\'])(кроме|помимо|включая|наряду с)([\\s,:«»"\'])',
                                 flags=re.IGNORECASE)
+COMPARATIVE_CONSTRUCTIONS_REGEX = re.compile('((,\\s*)(как|будто|словно|точно|как будто) (\w+)*.*(\.|$))|(^(как|будто|словно|точно|как будто) .*,\\s*.*\.$)', flags=re.IGNORECASE)
 
 SYNTAX_SPLICES_REGEX_POS = re.compile('(^|[\\s,:—«»"\'])([а-яА-Яё\-]+)\s+(да и|да)\s+([а-яА-Яё\-]+)($|[\\s,.:—«»"\'])',
                                       flags=re.IGNORECASE)
@@ -100,7 +101,7 @@ SYNTAX_SPLICES_REGEX = re.compile(
     flags=re.IGNORECASE)
 
 COMPARATIVE_CLAUSES_REGEX = re.compile(
-    r'((как|подобно тому как|ровно тому как) .+, .+)|(,\s*как .+)|((подобно тому|ровно тому,\s*как) .+)|((как будто|будто|словно|точно) .+, .+)|(.+, (как будто|будто|словно|точно) .+)',
+    r'((как|подобно тому как|ровно тому как) .+,\s*\b)|(,\s*как .+,\s*\b)|((подобно тому|ровно тому,\s*как) \b)|((как будто|будто|словно|точно) .+,\s*\b)|(, (как будто|будто|словно|точно) \b)',
     flags=re.IGNORECASE)
 
 EPINTHETIC_CONSTRUCTIONS_REGEX = re.compile(r'(\s+(-|—|—)\s+.+\s+(-|—|—)\s+)|(\(.+\))', flags=re.IGNORECASE)
@@ -109,7 +110,7 @@ COLLATION_CLAUSES_REGEX = re.compile("|".join(COLLATION_ROWS), flags=re.IGNORECA
 
 COMPLEX_SYNTAX_REGEX = re.compile('|'.join(COMPLEX_SYNTAX_ROWS), flags=re.IGNORECASE)
 
-APPEAL_REGEX = re.compile('((^|,\s)(Name|Patr|Surn)(,\s|!|\.|$))|((^|,\s)Name (Patr|Surn)(,\s|!|\.|$))|((^|,\s)Name Patr Surn(,\s|!|\.|$))', flags=re.IGNORECASE)
+APPEAL_REGEX = re.compile('((^|,\s)(Name|Patr|Surn)(,\s|!|\.|$))|((^|,\s)(Name (Patr|Surn))(,\s|!|\.|$))|((^|,\s)(Name Patr Surn)(,\s|!|\.|$))|((^|,\s)(Surn Name)(,\s|!|\.|$))|((^|\s)эй,\s*(NPRO|NOUN|ADJF|ADJF|Anum)(,|!|$))', flags=re.IGNORECASE)
 
 OURS_PRONOUNS, THEIRS_PRONOUNS = ('я', 'мы', 'ты', 'мой', 'наш', 'твой'), \
                                  ('он', 'она', 'они', 'её', 'ee', 'его', 'их', 'ваш')
