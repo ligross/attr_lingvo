@@ -4,6 +4,7 @@ import scipy.stats
 from scipy import stats
 from sklearn.metrics import jaccard_score
 
+from app.api.utils.ngrams import log_likelihood
 from app.api.utils.Text import NAN_ELEMENT
 
 
@@ -60,3 +61,11 @@ def calculate_ngrams_correlation(first_keywords, second_keywords):
         second_array.append(second_keywords.get(key, 0))
     result = round(np.corrcoef(first_array, second_array)[0, 1], 2)
     return None if math.isnan(result) else result
+
+
+def calculate_score(intensifiers, total_words):
+    intensifiers_score = {}
+    for word in intensifiers:
+        ll_score = log_likelihood(word, intensifiers[word], total_words)
+        intensifiers_score[word] = ll_score
+    return intensifiers_score

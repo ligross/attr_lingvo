@@ -17,14 +17,26 @@
                 <md-dialog-content>
                     <md-tabs>
                         <md-tab id="text1" md-label="Текст 1" class="md-scrollbar">
-                            <div v-bind:key='item.id' v-for="item in selected.first_text.debug" class="md-scrollbar">
-                                <p v-html="item">{{ item }}</p>
-                            </div>
+                            <md-table v-model="selected.first_text.debug" md-card>
+                                <md-table-row slot="md-table-row" slot-scope="{ item }">
+                                    <md-table-cell md-label="Пример" md-sort-by="item"><p v-html="item[0]">{{ item[0]
+                                        }}</p></md-table-cell>
+                                    <md-table-cell md-label="Исключить">
+                                        <md-checkbox v-model="item[1]"></md-checkbox>
+                                    </md-table-cell>
+                                </md-table-row>
+                            </md-table>
                         </md-tab>
                         <md-tab id="text2" md-label="Текст 2" class="md-scrollbar">
-                            <div v-bind:key='item.id' v-for="item in selected.second_text.debug" class="md-scrollbar">
-                                <p v-html="item">{{ item }}</p>
-                            </div>
+                            <md-table v-model="selected.second_text.debug" md-card>
+                                <md-table-row slot="md-table-row" slot-scope="{ item }">
+                                    <md-table-cell md-label="Пример" md-sort-by="item"><p v-html="item[0]">{{ item[0]
+                                        }}</p></md-table-cell>
+                                    <md-table-cell md-label="Исключить">
+                                        <md-checkbox v-model="item[1]"></md-checkbox>
+                                    </md-table-cell>
+                                </md-table-row>
+                            </md-table>
                         </md-tab>
                     </md-tabs>
                 </md-dialog-content>
@@ -255,10 +267,10 @@
                     </md-button>
                 </md-empty-state>
 
-                <template v-if="results.pearson_correlation !== null || results.linear_regression !== null || results.student_correlation !== null">
+                <template
+                        v-if="results.pearson_correlation !== null || results.linear_regression !== null || results.student_correlation !== null">
                     <md-button class="md-raised md-primary" @click="csvExport">Выгрузить</md-button>
-                    <md-button class="md-raised md-primary" @click="setDone('third_step', 'results_step')">Пересчитать
-                    </md-button>
+                    <md-button class="md-raised md-primary" @click="recalculateResults">Пересчитать</md-button>
                     <md-tabs class="md-primary" style="padding: 20px">
                         <md-tab id="results" md-label="Результаты">
                             <md-table class="content" :value="results.attributes" md-sort="id" md-sort-order="asc"
@@ -299,13 +311,14 @@
                                         </md-list>
                                     </div>
                                 </md-table-toolbar>
-                                    <md-toolbar class="md-transparent" v-if="results.attributes.length === 0">
-                                        <h6 class="md-title">Не выбраны параметры, участвующие в подсчете общего коэффициента корреляции </h6>
-                                    </md-toolbar>
+                                <md-toolbar class="md-transparent" v-if="results.attributes.length === 0">
+                                    <h6 class="md-title">Не выбраны параметры, участвующие в подсчете общего
+                                        коэффициента корреляции </h6>
+                                </md-toolbar>
                                 <md-table-row slot="md-table-row" slot-scope="{ item }">
                                     <md-table-cell md-label="ID" md-sort-by="id" md-numeric>{{ item.id }}
                                     </md-table-cell>
-                                    <md-table-cell md-label="Атрибут" md-sort-by="name">{{ item.name }}</md-table-cell>
+                                    <md-table-cell md-label="Атрибут" md-sort-by="description">{{ item.description }}</md-table-cell>
                                     <md-table-cell md-label="Текст 1" md-sort-by="text1" md-numeric>{{ item.first_text
                                         }}
                                     </md-table-cell>
@@ -438,7 +451,7 @@ export default {
         this.active = index
       }
       if (index === 'results_step') {
-        this.getResults()
+        this.calculateResults()
       }
     },
     csvExport () {
@@ -492,7 +505,7 @@ export default {
         this.showDialog = true
       }
     },
-    getResults () {
+    calculateResults () {
       this.error = ''
       this.is_processing = true
       this.results = {
@@ -514,7 +527,44 @@ export default {
         'second_text_genre': this.second_text_genre,
         'attributes': this.attributes
       }
-      $backend.getResults(payload)
+      $backend.calculateResults(payload)
+        .then(responseData => {
+          this.results = responseData['results']
+          console.log(this.results)
+          this.is_processing = false
+        }).catch(error => {
+          this.is_processing = false
+          this.error = error.message
+        })
+    },
+    recalculateResults () {
+      this.error = ''
+      this.is_processing = true
+      let payload = {
+        pearson_correlation: this.results.pearson_correlation,
+        linear_regression: this.results.linear_regression,
+        jaccard_correlation: this.results.jaccard_correlation,
+        student_correlation: this.results.student_correlation,
+        keywords_correlation: this.results.keywords_correlation,
+        'bigrams_correlation': this.results.bigrams_correlation,
+        'trigrams_correlation': this.results.trigrams_correlation,
+        'intensifiers_correlation': this.results.intensifiers_correlation,
+        'attributes': this.results.attributes,
+        'extended_attributes': this.results.extended_attributes
+      }
+      this.results = {
+        'pearson_correlation': null,
+        'linear_regression': null,
+        'jaccard_correlation': null,
+        'student_correlation': null,
+        'attributes': [],
+        'keywords_correlation': null,
+        'bigrams_correlation': null,
+        'trigrams_correlation': null,
+        'intensifiers_correlation': null,
+        'extended_attributes': []
+      }
+      $backend.recalculateResults(payload)
         .then(responseData => {
           this.results = responseData['results']
           console.log(this.results)

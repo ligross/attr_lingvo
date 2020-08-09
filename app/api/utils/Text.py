@@ -218,7 +218,7 @@ class Text:
             current_app.logger.info(f'Found errors: {errors if self.debug_available else errors_count}')
             self.extended_results['errors'] = {'value': errors_count,
                                                'description': 'Количество несловарных слов',
-                                               'debug': errors if self.debug_available else None}
+                                               'debug': list(map(lambda x: (x, False), errors)) if self.debug_available else None}
             return (errors_count / self.total_words) * IPM_MULTIPLIER
         except Exception as ex:
             current_app.logger.error(f'Exceptions trying to get/parse errors: {ex}')
@@ -245,7 +245,7 @@ class Text:
 
                 uniform_rows_count += len(matches)
                 if self.debug_available and matches:
-                    debug.append(highlight_match(sentence, matches))
+                    debug.append((highlight_match(sentence, matches), False))
         self.extended_results['uniform_rows_count'] = {'value': uniform_rows_count,
                                                        'description': 'Предложения с однородными рядами',
                                                        'debug': debug}
@@ -259,7 +259,7 @@ class Text:
             if matches:
                 introductory_words_count += len(matches)
                 if self.debug_available:
-                    debug.append(highlight_match(sentence, matches))
+                    debug.append((highlight_match(sentence, matches), False))
         self.extended_results['introductory_words_count'] = {'value': introductory_words_count,
                                                              'description': 'Вводные слова и конструкции',
                                                              'debug': debug}
@@ -283,7 +283,7 @@ class Text:
             matches = list(COMPARATIVES_REGEX.finditer(sentence))
             comparatives_count += len(pos_matches) + len(matches)
             if (pos_matches or matches) and self.debug_available:
-                debug.append(highlight_match(sentence, matches + pos_matches))
+                debug.append((highlight_match(sentence, matches + pos_matches), False))
         self.extended_results['comparatives_count'] = {'value': comparatives_count,
                                                        'description': 'Целевые и выделительные обороты',
                                                        'debug': debug}
@@ -306,7 +306,7 @@ class Text:
             if matches:
                 comparatives_constructions_count += len(matches)
                 if self.debug_available:
-                    debug.append(highlight_match(sentence, matches))
+                    debug.append((highlight_match(sentence, matches), False))
         self.extended_results['comparatives_constructions_count'] = {'value': comparatives_constructions_count,
                                                                      'description': 'Конструкции с семантикой сравнения',
                                                                      'debug': debug}
@@ -329,7 +329,7 @@ class Text:
             if pos_matches or matches:
                 syntax_splices_count += len(pos_matches) + len(matches)
                 if self.debug_available:
-                    debug.append(highlight_match(sentence, pos_matches + matches))
+                    debug.append((highlight_match(sentence, pos_matches + matches), False))
         self.extended_results['syntax_splices_count'] = {'value': syntax_splices_count,
                                                          'description': 'Синтаксические сращения',
                                                          'debug': debug}
@@ -343,7 +343,7 @@ class Text:
             if matches:
                 comparative_clauses_count += len(matches)
                 if self.debug_available:
-                    debug.append(highlight_match(sentence, matches))
+                    debug.append((highlight_match(sentence, matches), False))
         self.extended_results['comparative_clauses_count'] = {'value': comparative_clauses_count,
                                                               'description': 'Сравнительные придаточные',
                                                               'debug': debug}
@@ -358,7 +358,7 @@ class Text:
             if matches:
                 epenthetic_constructions_count += len(matches)
                 if self.debug_available:
-                    debug.append(highlight_match(sentence, matches))
+                    debug.append((highlight_match(sentence, matches), False))
         self.extended_results['epenthetic_constructions_count'] = {'value': epenthetic_constructions_count,
                                                                    'description': 'Вставные конструкции',
                                                                    'debug': debug}
@@ -372,7 +372,7 @@ class Text:
             if matches:
                 collation_clauses_count += len(matches)
                 if self.debug_available:
-                    debug.append(highlight_match(sentence, matches))
+                    debug.append((highlight_match(sentence, matches), False))
         self.extended_results['collation_clauses_count'] = {'value': collation_clauses_count,
                                                             'description': 'Конструкции с сопоставительными союзами',
                                                             'debug': debug}
@@ -386,7 +386,7 @@ class Text:
             if matches:
                 complex_syntax_constructs_count += len(matches)
                 if self.debug_available:
-                    debug.append(highlight_match(sentence, matches))
+                    debug.append((highlight_match(sentence, matches), False))
         self.extended_results['complex_syntax_constructs_count'] = {'value': complex_syntax_constructs_count,
                                                                     'description': 'Сложные синтаксические конструкции',
                                                                     'debug': debug}
@@ -404,14 +404,11 @@ class Text:
                         predicate = (parsed_sentence[i - 1] if i > 0 else None, parsed_sentence[i])
                         subject_keys = ('first_case', 'second_case', 'third_case', 'fourth_case', 'fifth_case')
                         subject_rules = list(filter(lambda r: r[0] in subject_keys, SINGLE_VERB_SUBJECTS.items()))
-                        try:
-                            has_subject = next((True for w in parsed_sentence
+                        has_subject = next((True for w in parsed_sentence
                                                 for tags, b_words in subject_rules
                                                 if match_morph(w[1], SINGLE_VERB_SUBJECTS[tags]) and (
                                                         not b_words[1] or (predicate[0] and predicate[0][1].normal_form in b_words[1]))),
                                                None)
-                        except Exception as e:
-                            print(e)
                         if predicate_type == 'seventh_case' and not has_subject:
                             has_subject = next((True for word in parsed_sentence
                                                 if match_morph(word[1], SINGLE_VERB_SUBJECTS['sixth_case'])
@@ -424,7 +421,7 @@ class Text:
                             break
                 if is_single_verb:
                     if self.debug_available:
-                        debug.append(sentence)
+                        debug.append((sentence, False))
                     break
 
         self.extended_results['single_verb_count'] = {'value': single_verb_count,
@@ -476,7 +473,7 @@ class Text:
 
                     appeal_count += len(matches)
                     if self.debug_available and matches:
-                        debug.append(highlight_match(sentence, matches))
+                        debug.append((highlight_match(sentence, matches), False))
         self.extended_results['appeal_count'] = {'value': appeal_count,
                                                  'description': 'Обращения',
                                                  'debug': debug}
@@ -504,9 +501,9 @@ class Text:
                         ours_matches.append(Match((current_pos, current_pos + len(word[0]), '')))
                 current_pos += len(word[0])
             if ours_found and self.debug_available:
-                ours_debug.append(highlight_match(sentence, ours_matches))
+                ours_debug.append((highlight_match(sentence, ours_matches), False))
             if theirs_found and self.debug_available:
-                theirs_debug.append(highlight_match(sentence, theirs_matches))
+                theirs_debug.append((highlight_match(sentence, theirs_matches), False))
         self.extended_results['dichotomy_ours_count'] = {'value': dichotomy_ours_count,
                                                          'description': 'Местоимения "я, мы"-группы',
                                                          'debug': ours_debug}
@@ -539,7 +536,7 @@ class Text:
             if matches:
                 complex_words_count += len(matches)
                 if self.debug_available:
-                    debug.append(highlight_match(sentence, matches, start_shift=0, end_shift=-1))
+                    debug.append((highlight_match(sentence, matches, start_shift=0, end_shift=-1), False))
         self.extended_results['complex_words_count'] = {'value': complex_words_count,
                                                         'description': 'Сложные слова полуслитного написания',
                                                         'debug': debug}
@@ -553,7 +550,7 @@ class Text:
             if matches:
                 modal_particles_count += len(matches)
                 if self.debug_available:
-                    debug.append(highlight_match(sentence, matches))
+                    debug.append((highlight_match(sentence, matches), False))
         self.extended_results['modal_particles_count'] = {'value': modal_particles_count,
                                                           'description': 'Модальные частицы',
                                                           'debug': debug}
@@ -570,7 +567,7 @@ class Text:
                                       raw_matches))
                 modal_postfix_count += len(matches)
                 if matches and self.debug_available:
-                    debug.append(highlight_match(sentence, matches))
+                    debug.append((highlight_match(sentence, matches), False))
         self.extended_results['modal_postfix_count'] = {'value': modal_postfix_count,
                                                         'description': 'Наличие/отсутствие модального постфикса «-то»',
                                                         'debug': debug}
@@ -584,7 +581,7 @@ class Text:
             if matches:
                 interjections_count += len(matches)
                 if self.debug_available:
-                    debug.append(highlight_match(sentence, matches, end_shift=-1))
+                    debug.append((highlight_match(sentence, matches, end_shift=-1), False))
         self.extended_results['interjections_count'] = {'value': interjections_count,
                                                         'description': 'Междометия',
                                                         'debug': debug}
@@ -594,8 +591,7 @@ class Text:
         intensifiers = {}
         debug = []
         for sentence in self.sentences:
-            raw_matches = list(INTENSIFIERS_REGEX.finditer(sentence, overlapped=True))
-            matches = []
+            raw_matches = list(INTENSIFIERS_REGEX.finditer(sentence))
             for raw_match in raw_matches:
                 substring = sentence[raw_match.start():raw_match.end()].lower()
                 left_word, punkt1, main_word, punkt2, right_word = map(lambda s: s.lower() if s else s,
@@ -636,17 +632,15 @@ class Text:
                     intensifiers[main_word] += 1
                 else:
                     intensifiers[main_word] = 1
-                matches.append(raw_match)
-            if matches:
                 if self.debug_available:
-                    debug.append(highlight_match(sentence, matches, 3))
-        self.extended_results['intensifiers_count'] = {'value': sum(intensifiers.values()),
-                                                       'description': 'Предпочтительные слова-интенсификаторы',
-                                                       'debug': debug}
+                    debug.append((highlight_match(sentence, [raw_match], 3), False, main_word))
         intensifiers_score = {}
         for word in intensifiers:
             ll_score = log_likelihood(word, intensifiers[word], self.total_words)
             intensifiers_score[word] = ll_score
+        self.extended_results['intensifiers_count'] = {'value': sum(intensifiers.values()),
+                                                       'description': 'Предпочтительные слова-интенсификаторы',
+                                                       'debug': debug}
         return intensifiers_score
 
     def keywords_count(self):
@@ -659,7 +653,7 @@ class Text:
                 keywords[word] = ll_score
         self.extended_results['keywords_count'] = {'value': len(keywords),
                                                    'description': 'Ключевые слова',
-                                                   'debug': list(map(lambda x: f'{x[0]} - {x[1]}',
+                                                   'debug': list(map(lambda x: (f'{x[0]} - {x[1]}', False, x[1]),
                                                                      keywords.items())) if self.debug_available else []}
         return keywords
 
@@ -669,7 +663,7 @@ class Text:
                    bigram, value in bigrams}
         self.extended_results['bigrams_count'] = {'value': len(bigrams),
                                                   'description': 'Наиболее частотные биграммы',
-                                                  'debug': list(map(lambda x: f'{x[0]} - {x[1]}',
+                                                  'debug': list(map(lambda x: (f'{x[0]} - {x[1]}', False, x[1]),
                                                                     bigrams.items())) if self.debug_available else []}
         return bigrams
 
@@ -681,7 +675,7 @@ class Text:
             in trigrams}
         self.extended_results['trigrams_count'] = {'value': len(trigrams),
                                                    'description': 'Наиболее частотные триграммы',
-                                                   'debug': list(map(lambda x: f'{x[0]} - {x[1]}',
+                                                   'debug': list(map(lambda x: (f'{x[0]} - {x[1]}', False, x[1]),
                                                                      trigrams.items())) if self.debug_available else []}
         return trigrams
 
@@ -704,7 +698,7 @@ class Text:
                     standalone_constructions_count += 1
                     matches.append(match)
             if self.debug_available and matches:
-                debug.append(highlight_match(sentence, matches))
+                debug.append((highlight_match(sentence, matches), False))
         self.extended_results['standalone_constructions_count'] = {'value': standalone_constructions_count,
                                                                    'description': 'Предложения с обособленными приложениями',
                                                                    'debug': debug}
@@ -811,10 +805,6 @@ class Text:
             self.results['modal_postfix_count'] = {
                 'name': self.attributes['modal_postfix_count']['name'],
                 'result': self.modal_postfix_count()}
-        # if 'intensifiers_count' in self.attributes.keys():
-        #    self.results['intensifiers_count'] = {
-        #        'name': self.attributes['intensifiers_count']['name'],
-        #        'result': self.intensifiers_count()}
 
         # correlation-based parameters
         keywords = self.keywords_count() if 'keywords_count' in self.attributes.keys() else {}

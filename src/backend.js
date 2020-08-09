@@ -23,8 +23,16 @@ $axios.interceptors.response.use(function (response) {
 
 export default {
 
-  getResults (payload) {
+  calculateResults (payload) {
     return $axios.post(`results/calculate`, payload)
+      .then(response => {
+        console.log(response.data)
+        return response.data
+      }
+      )
+  },
+  recalculateResults (payload) {
+    return $axios.post(`results/recalculate`, payload)
       .then(response => {
         console.log(response.data)
         return response.data
