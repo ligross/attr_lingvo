@@ -318,7 +318,7 @@
                                 <md-table-row slot="md-table-row" slot-scope="{ item }">
                                     <md-table-cell md-label="ID" md-sort-by="id" md-numeric>{{ item.id }}
                                     </md-table-cell>
-                                    <md-table-cell md-label="Атрибут" md-sort-by="description">{{ item.description }}</md-table-cell>
+                                    <md-table-cell md-label="Атрибут" md-sort-by="description">{{ item.name }}</md-table-cell>
                                     <md-table-cell md-label="Текст 1" md-sort-by="text1" md-numeric>{{ item.first_text
                                         }}
                                     </md-table-cell>
