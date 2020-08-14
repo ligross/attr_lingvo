@@ -491,7 +491,10 @@ class Text:
                 if not word[1]:
                     pass
                 else:
-                    normal_form = parse_word_morph(word[1].methods_stack[0][1]).normal_form if len(word[1].methods_stack) > 1 else word[1].normal_form
+                    try:
+                        normal_form = parse_word_morph(word[1].methods_stack[0][1]).normal_form if len(word[1].methods_stack) > 1 else word[1].normal_form
+                    except:
+                        normal_form = word[1].normal_form
                     if normal_form in THEIRS_PRONOUNS:
                         theirs_found = True
                         dichotomy_theirs_count += 1
