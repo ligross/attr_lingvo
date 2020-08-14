@@ -23,7 +23,7 @@ def tokenize_sentences(text):
     sentences = text.split('…\n')
     for sentence in sentences:
         result.extend(TOKENIZER.tokenize(sentence))
-    return [s.replace('\n\n', '\n').strip() for s in result]
+    return [s.replace('\r\n', '\n').replace('\n\n', '\n').strip() for s in result]
 
 
 def tokenize_corp_sentences(text):
