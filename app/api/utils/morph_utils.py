@@ -4,10 +4,11 @@ import nltk
 import pymorphy2
 from nltk.data import load
 from nltk.tokenize import word_tokenize
+from nltk.tokenize.punkt import PunktSentenceTokenizer, PunktLanguageVars
 
 from app.api.rules.rules import SENTENCES_SPLIT_REGEX, ADDITIONAL_ABBREVIATIONS, SENTENCES_SPLIT_ADD_REGEX
 
-PUNCTUATION = ' "#$%&()*+.!?«»,\'-/:;<=>@[]^_`{|}~—'
+PUNCTUATION = ' "#$%&()*+.!?«»,\'-/:;<=>@[]^_`{|}~—…'
 MORPH_ANALYZER = pymorphy2.MorphAnalyzer()
 TAG = MORPH_ANALYZER.TagClass
 
@@ -18,7 +19,11 @@ TOKENIZER._params.abbrev_types.update(ADDITIONAL_ABBREVIATIONS)
 
 
 def tokenize_sentences(text):
-    return [s.replace('\n\n', '\n').strip() for s in TOKENIZER.tokenize(text)]
+    result = []
+    sentences = text.split('…\n')
+    for sentence in sentences:
+        result.extend(TOKENIZER.tokenize(sentence))
+    return [s.replace('\n\n', '\n').strip() for s in result]
 
 
 def tokenize_corp_sentences(text):

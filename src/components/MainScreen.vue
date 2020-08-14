@@ -42,9 +42,17 @@
                 </md-dialog-content>
             </md-dialog>
         </template>
-        <md-toolbar class="md-transparent">
-            <div class="md-toolbar-row">
-                <h3 class="md-title">Тут какое-то название или описание</h3>
+        <md-toolbar md-elevation="0">
+            <div>
+                <h4 style="text-align: left;">Настоящий ресурс предназначен для решения идентификационных задач
+                    атрибуции
+                    письменных текстов.
+                </h4>
+                <h4 style="text-align: left">Для того чтобы начать работу, выберите два текста, которые хотите
+                    сравнить на предмет авторства,
+                    скопируйте их в соответствующие поля, выберите набор метрик, которые необходимо посчитать для
+                    конечных математических моделей текстов, интерпретируйте результаты полученных коэффициентов
+                    сравнения математических моделей двух сравниваемых текстов.</h4>
             </div>
         </md-toolbar>
 
@@ -59,6 +67,26 @@
                                 <md-option v-for="genre in genres" v-bind:value="genre.value" :key="genre.value">{{
                                     genre.text }}
                                 </md-option>
+                            </md-select>
+                        </md-field>
+
+                    </div>
+                </div>
+                <div class="md-layout md-gutter md-alignment-center-center">
+                    <div class="md-layout-item">
+                        <md-field>
+                            <label>Загрузите первый текст</label>
+                            <md-file @change="loadFirstTextFromFile"/>
+                        </md-field>
+                    </div>
+                    <div class="md-layout-item">
+                        <md-field  >
+                            <label>Кодировка</label>
+                            <md-select v-model="first_text_encoding" @md-selected="changeFirstTextEncoding">
+                                <md-option value="CP1251">Windows-1251</md-option>
+                                <md-option value="utf-8">UTF-8</md-option>
+                                <md-option value="UTF-16">UTF-16</md-option>
+                                <md-option value="KOI8-R">KOI8-R</md-option>
                             </md-select>
                         </md-field>
                     </div>
@@ -82,6 +110,25 @@
                                 <md-option v-for="genre in genres" v-bind:value="genre.value" :key="genre.value">{{
                                     genre.text }}
                                 </md-option>
+                            </md-select>
+                        </md-field>
+                    </div>
+                </div>
+                <div class="md-layout md-gutter md-alignment-center-center">
+                    <div class="md-layout-item">
+                        <md-field>
+                            <label>Загрузите второй текст</label>
+                            <md-file @change="loadSecondTextFromFile"/>
+                        </md-field>
+                    </div>
+                    <div class="md-layout-item">
+                        <md-field>
+                            <label>Кодировка</label>
+                            <md-select v-model="second_text_encoding" @md-selected="changeSecondTextEncoding">
+                                <md-option value="CP1251">Windows-1251</md-option>
+                                <md-option value="UTF-8">UTF-8</md-option>
+                                <md-option value="UTF-16">UTF-16</md-option>
+                                <md-option value="KOI8-R">KOI8-R</md-option>
                             </md-select>
                         </md-field>
                     </div>
@@ -318,7 +365,8 @@
                                 <md-table-row slot="md-table-row" slot-scope="{ item }">
                                     <md-table-cell md-label="ID" md-sort-by="id" md-numeric>{{ item.id }}
                                     </md-table-cell>
-                                    <md-table-cell md-label="Атрибут" md-sort-by="description">{{ item.description }}</md-table-cell>
+                                    <md-table-cell md-label="Атрибут" md-sort-by="description">{{ item.description }}
+                                    </md-table-cell>
                                     <md-table-cell md-label="Текст 1" md-sort-by="text1" md-numeric>{{ item.first_text
                                         }}
                                     </md-table-cell>
@@ -362,6 +410,9 @@
                 </template>
             </md-step>
         </md-steppers>
+        <md-toolbar md-elevation="0">
+            <p style="margin: auto">© 2020, НИУ "Высшая школа экономики</p>
+        </md-toolbar>
     </div>
 </template>
 
@@ -385,6 +436,10 @@ export default {
     results_step: false,
     first_text: '',
     second_text: '',
+    first_text_file: '',
+    second_text_file: '',
+    first_text_encoding: 'CP1251',
+    second_text_encoding: 'CP1251',
     first_text_genre: 'fiction',
     second_text_genre: 'fiction',
     genres: [
@@ -453,6 +508,35 @@ export default {
       if (index === 'results_step') {
         this.calculateResults()
       }
+    },
+    changeFirstTextEncoding () {
+      console.log(this.first_text_file)
+      const reader = new FileReader()
+
+      reader.onload = e => { this.first_text = e.target.result }
+      reader.readAsText(this.first_text_file, this.first_text_encoding)
+    },
+    changeSecondTextEncoding () {
+      const reader = new FileReader()
+
+      reader.onload = e => { this.second_text = e.target.result }
+      reader.readAsText(this.second_text_file, this.second_text_encoding)
+    },
+    loadFirstTextFromFile (ev) {
+      const file = ev.target.files[0]
+      this.first_text_file = file
+      const reader = new FileReader()
+
+      reader.onload = e => { this.first_text = e.target.result }
+      reader.readAsText(file, this.first_text_encoding)
+    },
+    loadSecondTextFromFile (ev) {
+      const file = ev.target.files[0]
+      this.second_text_file = file
+      const reader = new FileReader()
+
+      reader.onload = e => { this.second_text = e.target.result }
+      reader.readAsText(file, this.second_text_encoding)
     },
     csvExport () {
       let csvContent = 'data:text/csv;charset=utf-8,'
@@ -620,6 +704,10 @@ export default {
         padding-top: 30px;
         border: 1px solid rgba(#000, .12);
 
+    }
+
+    .md-toolbar + .md-toolbar {
+        margin: auto;
     }
 </style>
 

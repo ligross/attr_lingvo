@@ -491,11 +491,12 @@ class Text:
                 if not word[1]:
                     pass
                 else:
-                    if word[1].normal_form in THEIRS_PRONOUNS:
+                    normal_form = parse_word_morph(word[1].methods_stack[0][1]).normal_form if len(word[1].methods_stack) > 1 else word[1].normal_form
+                    if normal_form in THEIRS_PRONOUNS:
                         theirs_found = True
                         dichotomy_theirs_count += 1
                         theirs_matches.append(Match((current_pos, current_pos + len(word[0]), '')))
-                    elif word[1].normal_form in OURS_PRONOUNS:
+                    elif normal_form in OURS_PRONOUNS:
                         ours_found = True
                         dichotomy_ours_count += 1
                         ours_matches.append(Match((current_pos, current_pos + len(word[0]), '')))
