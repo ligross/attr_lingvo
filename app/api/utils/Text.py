@@ -217,7 +217,7 @@ class Text:
                     errors.extend(error)
             current_app.logger.info(f'Found errors: {errors if self.debug_available else errors_count}')
             self.extended_results['errors'] = {'value': errors_count,
-                                               'description': 'Количество несловарных слов',
+                                               'description': 'Количество слов несловарного написания',
                                                'debug': list(map(lambda x: (x, False), errors)) if self.debug_available else None}
             return (errors_count / self.total_words) * IPM_MULTIPLIER
         except Exception as ex:

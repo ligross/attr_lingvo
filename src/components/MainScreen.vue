@@ -191,16 +191,11 @@
                                 <md-checkbox v-model="attributes.con_coefficient.checked"/>
                                 <span class="md-list-item-text">{{ attributes.con_coefficient.name }}</span>
                             </md-list-item>
-                            <md-divider></md-divider>
-                            <md-list-item :key="attributes.errors.name">
-                                <md-checkbox v-model="attributes.errors.checked"/>
-                                <span class="md-list-item-text">{{ attributes.errors.name }}</span>
-                            </md-list-item>
                         </md-list>
                     </div>
                     <div class="viewport">
                         <md-list>
-                            <md-subheader>Стилостатистика с когнитивной базой</md-subheader>
+                            <md-subheader>Реализация прагматикона языковой личности</md-subheader>
                             <md-list-item :key="attributes.uniform_rows_count.name">
                                 <md-checkbox v-model="attributes.uniform_rows_count.checked"/>
                                 <span class="md-list-item-text">{{ attributes.uniform_rows_count.name }}</span>
@@ -249,7 +244,7 @@
                     </div>
                     <div class="viewport">
                         <md-list>
-                            <md-subheader>Описание тезауруса личности</md-subheader>
+                            <md-subheader>Описание тезауруса языковой личности</md-subheader>
                             <md-list-item :key="attributes.keywords_count.name">
                                 <md-checkbox v-model="attributes.keywords_count.checked"/>
                                 <span class="md-list-item-text">{{ attributes.keywords_count.name }}</span>
@@ -270,7 +265,7 @@
                     </div>
                     <div class="viewport">
                         <md-list>
-                            <md-subheader>Вербально-семантический уровень</md-subheader>
+                            <md-subheader>Экспликация вербально-семантического уровня языковой личности</md-subheader>
                             <md-list-item :key="attributes.complex_words_count.name">
                                 <md-checkbox v-model="attributes.complex_words_count.checked"/>
                                 <span class="md-list-item-text">{{ attributes.complex_words_count.name }}</span>
@@ -290,6 +285,10 @@
                             <md-list-item :key="attributes.intensifiers_count.name">
                                 <md-checkbox v-model="attributes.intensifiers_count.checked"/>
                                 <span class="md-list-item-text">{{ attributes.intensifiers_count.name }}</span>
+                            </md-list-item>
+                            <md-list-item :key="attributes.errors.name">
+                                <md-checkbox v-model="attributes.errors.checked"/>
+                                <span class="md-list-item-text">{{ attributes.errors.name }}</span>
                             </md-list-item>
                         </md-list>
                     </div>
@@ -463,7 +462,7 @@ export default {
       'ac_coefficient': {name: 'Коэффициент активности (Ас)', checked: true},
       'din_coefficient': {name: 'Коэффициент динамизма (Din)', checked: true},
       'con_coefficient': {name: 'Коэффициент связности текста (Con)', checked: true},
-      'errors': {name: 'Количество несловарных слов', checked: true},
+      'errors': {name: 'Количество слов несловарного написания', checked: true},
       'uniform_rows_count': {name: 'Предложения с однородными рядами', checked: true},
       'standalone_constructions_count': {name: 'Предложения с обособленными приложениями', checked: true},
       'introductory_words_count': {name: 'Вводные слова и конструкции', checked: true},
