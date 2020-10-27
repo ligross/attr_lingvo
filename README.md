@@ -42,7 +42,7 @@ Before getting started, you should have the following installed and running:
 * Clone this repository:
 
 	```
-	$ git clone https://github.com/ligross/attr_lingvo.git
+	$ git clone https://github.com/KhomenkoAnna/attr_lingvo.git
 	```
 
 * Setup virtual environment, install dependencies, and activate it:
